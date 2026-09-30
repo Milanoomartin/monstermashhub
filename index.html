@@ -1390,6 +1390,7 @@ body.trick-or-treat .tot-helper-bucket.on{display:block}
 
 </style>
 <link rel="stylesheet" href="assets/mm-juice.css">
+<link rel="stylesheet" href="assets/mm-cloud.css">
 </head>
 <body>
 <div id="loading" role="status" aria-live="polite">
@@ -1536,6 +1537,7 @@ body.trick-or-treat .tot-helper-bucket.on{display:block}
   <symbol id="i-expand" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5-5 5 5M7 15l5 5 5-5"/></g></symbol>
   <symbol id="i-flag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></g></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.7 4.7 0 0 0 7 18.5z"/><path d="M9.5 14.5l2 2 3.5-4"/></g></symbol>
   <symbol id="i-gamepad" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 8h9a5 5 0 0 1 4.7 6.7l-1 2.9a2.6 2.6 0 0 1-4.3 1l-2-2.1h-3.8l-2 2.1a2.6 2.6 0 0 1-4.3-1l-1-2.9A5 5 0 0 1 7.5 8z"/><path d="M7 11v5M4.5 13.5h5M16 12.5h.01M18.5 15h.01"/></g></symbol>
 </svg>
 
@@ -1594,6 +1596,7 @@ body.trick-or-treat .tot-helper-bucket.on{display:block}
   <section class="page" id="page-album" data-page="album"></section>
   <section class="page" id="page-accounts" data-page="accounts" hidden></section>
   <section class="page" id="page-trades" data-page="trades" hidden></section>
+  <section class="page" id="page-social" data-page="social" hidden></section>
   <section class="page" id="page-vault" data-page="vault" hidden></section>
   <section class="page" id="page-events" data-page="events" hidden></section>
   <section class="page" id="page-games" data-page="games" hidden></section>
@@ -1612,7 +1615,7 @@ body.trick-or-treat .tot-helper-bucket.on{display:block}
   <button data-page="album"><svg><use href="#i-book"/></svg>Album</button>
   <button data-page="accounts"><svg><use href="#i-users"/></svg>Accounts</button>
   <button data-page="trades"><svg><use href="#i-swap"/></svg>Trades</button>
-  <button data-page="vault"><svg><use href="#i-vault"/></svg>Vault</button>
+  <button data-page="social"><svg><use href="#i-cloud"/></svg>Friends<span class="badge cl-badge" hidden></span></button>
   <button id="tab-more"><svg><use href="#i-menu"/></svg>More</button>
 </nav>
 <button id="fab-sets" aria-label="Jump to a set"><svg><use href="#i-grid"/></svg></button>
@@ -1620,6 +1623,7 @@ body.trick-or-treat .tot-helper-bucket.on{display:block}
 <div class="sheet-wrap" id="sheet-more"><div class="scrim" data-close></div><div class="sheet" role="dialog" aria-label="More pages">
   <div class="grab"></div><h3>More</h3>
   <div class="sheet-grid">
+    <button class="rail-btn" data-page="vault"><svg><use href="#i-vault"/></svg><span class="rail-label">Star Vault</span></button>
     <button class="rail-btn" data-page="events"><svg><use href="#i-calendar"/></svg><span class="rail-label">Event Planner</span></button>
     <button class="rail-btn" data-page="games"><svg><use href="#i-gamepad"/></svg><span class="rail-label">Games</span></button>
     <button class="rail-btn" data-page="progress"><svg><use href="#i-chart"/></svg><span class="rail-label">Progress</span></button>
@@ -6671,7 +6675,9 @@ MM.PWA.init();
    App shell: navigation, theme, hero banner, countdown, tab icon, sound
    toggles, sheets, easter eggs, art hydration, capabilities, boot
    ===================================================================== */
-const PAGES = { album: MM.Album, accounts: MM.Accounts, trades: MM.Trade, events: MM.Events, games: MM.Games, vault: MM.Vault, progress: MM.Progress, collection: MM.Collection, io: MM.IO, lab: MM.Lab };
+const PAGES = { album: MM.Album, accounts: MM.Accounts, trades: MM.Trade,
+  social: { render: (a) => (MM.Social ? MM.Social.render(a) : ($('#page-social').innerHTML = '<div class="empty"><div class="big">Friends &amp; Groups</div>The cloud module did not load.</div>')) },
+  events: MM.Events, games: MM.Games, vault: MM.Vault, progress: MM.Progress, collection: MM.Collection, io: MM.IO, lab: MM.Lab };
 MM.page = null;
 
 MM.go = function (page, opts = {}) {
@@ -6895,6 +6901,8 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 
 })();</script>
 <script src="assets/mm-juice.js"></script>
+<script src="assets/mm-cloud-config.js"></script>
+<script src="assets/mm-cloud.js"></script>
 <script src="assets/mm-art-core.js" defer></script>
 <script src="assets/mm-stickers-a.js" defer></script>
 <script src="assets/mm-stickers-b.js" defer></script>

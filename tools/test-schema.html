@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schema tests</title>
+<style>
+  :root { color-scheme: dark; --bg: #120a24; --ink: #f7efff; --ok: #7ef07a; --bad: #ff5d72; --mute: #9d88c2; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); font: 14px/1.5 ui-monospace, Consolas, monospace; }
+  h1 { font: 700 18px system-ui, sans-serif; margin: 0 0 8px; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); } .mute { color: var(--mute); }
+  pre { white-space: pre-wrap; margin: 0; }
+</style>
+</head>
+<body>
+<h1>Monster Mash · Supabase schema tests (PGlite)</h1>
+<p class="mute">Runs <code>supabase/schema.sql</code> in an in-browser PostgreSQL with stand-ins for Supabase's auth schema and roles, then checks the security rules as five different players. Serve the repo folder (e.g. <code>python -m http.server</code>) and open <code>/tools/test-schema.html</code>.</p>
+<pre id="out">Loading PGlite…</pre>
+<script type="module">
+import { PGlite } from 'https://cdn.jsdelivr.net/npm/@electric-sql/pglite@0.2.17/dist/index.js';
+
+const out = document.getElementById('out');
+const lines = [];
+let pass = 0, fail = 0;
+const log = (html) => { lines.push(html); out.innerHTML = lines.join('\n'); };
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const ok = (name, cond, extra = '') => { cond ? pass++ : fail++; log(`<span class="${cond ? 'ok' : 'bad'}">${cond ? 'PASS' : 'FAIL'}</span> ${esc(name)}${extra ? ` <span class="mute">${esc(extra)}</span>` : ''}`); };
+const section = (t) => log(`\n<b>${esc(t)}</b>`);
+
+// Supabase provides these; the stand-ins let schema.sql run unchanged.
+export const STUBS = `
+create schema if not exists auth;
+do $$ begin create role anon nologin; exception when duplicate_object then null; end $$;
+do $$ begin create role authenticated nologin; exception when duplicate_object then null; end $$;
+grant usage on schema public, auth to anon, authenticated;
+create table if not exists auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}'::jsonb);
+create or replace function auth.uid() returns uuid language sql stable as $f$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $f$;
+grant execute on function auth.uid() to anon, authenticated;
+do $$ begin create publication supabase_realtime; exception when duplicate_object then null; end $$;
+alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant all on functions to anon, authenticated;
+alter default privileges in schema public grant all on sequences to anon, authenticated;
+`;
+
+const U = {
+  A: '11111111-1111-4111-8111-111111111111', B: '22222222-2222-4222-8222-222222222222', C: '33333333-3333-4333-8333-333333333333',
+  D: '44444444-4444-4444-8444-444444444444', E: '55555555-5555-4555-8555-555555555555',
+};
+const counts = (fill = 1) => '{' + Array.from({ length: 198 }, () => fill).join(',') + '}';
+
+let db;
+/** Run SQL as a signed-in player (role authenticated + JWT sub), like a request from the app. */
+async function as(who, sql, params = []) {
+  return db.transaction(async (tx) => {
+    await tx.exec(`set local role ${who ? 'authenticated' : 'anon'}`);
+    await tx.query(`select set_config('request.jwt.claim.sub', $1, true)`, [who ? U[who] : '']);
+    return (await tx.query(sql, params)).rows;
+  });
+}
+async function fails(who, sql, params = []) { try { await as(who, sql, params); return ''; } catch (e) { return e.message || String(e); } }
+const one = async (who, sql, params) => (await as(who, sql, params))[0];
+const add = async (who, target) => (await one(who, 'select public.add_friend($1) r', [target])).r.result;
+const sees = async (who, acc) => (await as(who, 'select id from public.shared_accounts where id = $1', [acc])).length === 1;
+const share = (who, local, name, extra = {}) => one(who,
+  `insert into public.shared_accounts (owner, local_id, name, counts, visibility, auto_share, findable, mogo_code, friend_link)
+   values (auth.uid(), $1, $2, '${counts(extra.fill ?? 2)}', $3, $4, $5, $6, $7) returning id`,
+  [local, name, extra.visibility || 'private', extra.auto ?? true, extra.findable ?? true, extra.code || '', extra.link || '']).then((r) => r.id);
+
+try {
+  db = new PGlite();
+  await db.exec(STUBS);
+  // cache-busting query: the app's service worker would otherwise serve a stale copy
+  const schema = await (await fetch('../supabase/schema.sql?t=' + Date.now(), { cache: 'no-store' })).text();
+  await db.exec(schema);
+  ok('schema.sql runs cleanly', true);
+  await db.exec(schema);
+  ok('schema.sql can be re-run', true);
+
+  section('Sign-up & profiles');
+  for (const [k, id] of Object.entries(U)) await db.query('insert into auth.users (id, email) values ($1, $2)', [id, k.toLowerCase() + '@example.com']);
+  const prof = (await db.query('select * from public.profiles order by id')).rows;
+  ok('sign-up trigger makes a profile per user', prof.length === 5);
+  ok('friend codes look like MM-XXXX-XXXX', prof.every((p) => /^MM-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/.test(p.friend_code)), prof[0].friend_code);
+  ok('friend codes are all different', new Set(prof.map((p) => p.friend_code)).size === 5);
+  for (const [k, name] of [['A', 'alice'], ['B', 'bob'], ['C', 'cara'], ['D', 'dan'], ['E', 'eve']]) await as(k, 'update public.profiles set username = $1 where id = auth.uid()', [name]);
+  ok('players set their own username', (await one('A', 'select username from public.profiles where id = $1', [U.A])).username === 'alice');
+  await as('A', "update public.profiles set display_name = 'hacked' where id = $1", [U.B]);
+  ok("cannot edit someone else's profile", (await one('B', 'select display_name from public.profiles where id = $1', [U.B])).display_name !== 'hacked');
+  ok('cannot change your own friend code', /permission denied/i.test(await fails('A', "update public.profiles set friend_code = 'MM-AAAA-AAAA' where id = auth.uid()")));
+  ok('bad usernames are rejected', /check constraint|violates/i.test(await fails('A', "update public.profiles set username = 'Bad Name!' where id = auth.uid()")));
+  ok('signed-out visitors cannot read profiles', /permission denied/i.test(await fails(null, 'select * from public.profiles')));
+
+  section('Cloud save');
+  await as('A', `insert into public.user_state (user_id, state, state_ms) values (auth.uid(), '{"v":1}', 5)
+                 on conflict (user_id) do update set state = excluded.state, state_ms = excluded.state_ms`);
+  ok('player can save their own cloud state', (await one('A', 'select state_ms from public.user_state where user_id = auth.uid()')).state_ms == 5);
+  ok("cannot read someone else's cloud state", (await as('B', 'select * from public.user_state where user_id = $1', [U.A])).length === 0);
+  ok("cannot write someone else's cloud state", /row-level security/i.test(await fails('B', `insert into public.user_state (user_id, state) values ($1, '{}')`, [U.A])));
+
+  section('Shared accounts & account tokens');
+  const a1 = await share('A', 'a1', 'Alice Main', { code: 'ABC-123-XYZ', link: 'https://mply.io/ab12cd' });
+  const a2 = await share('A', 'a2', 'Alice Alt', { auto: false });
+  const b1 = await share('B', 'b1', 'Bob Main', { fill: 0 });
+  const c1 = await share('C', 'c1', 'Cara Main', { fill: 0, auto: false });
+  const d1 = await share('D', 'd1', 'Dan Public', { visibility: 'public', fill: 1 });
+  const e1 = await share('E', 'e1', 'Eve Hidden', { findable: false, code: 'NOPE-9999-99' });
+  const tokA2 = (await one('A', 'select friend_token from public.account_keys where account_id = $1', [a2])).friend_token;
+  ok('every shared account gets a token MMA-XXXX-XXXX-XXXX', /^MMA-[2-9A-Z]{4}-[2-9A-Z]{4}-[2-9A-Z]{4}$/.test(tokA2), tokA2);
+  ok("nobody else can read an account's token", (await as('B', 'select * from public.account_keys where account_id = $1', [a2])).length === 0);
+  ok('tokens cannot be edited directly', /permission denied/i.test(await fails('A', "update public.account_keys set friend_token = 'MMA-AAAA-AAAA-AAAA' where account_id = $1", [a2])));
+  ok('private accounts are hidden from strangers', !(await sees('B', a1)));
+  ok('public accounts are visible to everyone', await sees('A', d1));
+  ok('cannot share an account as someone else', /row-level security/i.test(await fails('A', `insert into public.shared_accounts (owner, local_id, name, counts) values ($1, 'x', 'x', '${counts()}')`, [U.B])));
+  await as('B', "update public.shared_accounts set name = 'pwned' where id = $1", [a1]);
+  ok("cannot edit someone else's shared account", (await one('A', 'select name from public.shared_accounts where id = $1', [a1])).name === 'Alice Main');
+
+  section('Friends & per-friend access');
+  ok('friend request by username', await add('A', 'bob') === 'sent');
+  ok('duplicate request says pending', await add('A', '@bob') === 'pending');
+  ok('adding yourself is refused', await add('A', 'alice') === 'self');
+  ok('unknown names are not found', await add('A', 'nobody') === 'not_found');
+  const req = await one('B', 'select * from public.friendships');
+  ok('the other person sees the request', req && req.requester === U.A);
+  ok('outsiders do not see it', (await as('C', 'select * from public.friendships')).length === 0);
+  ok('requester cannot accept their own request', /no longer waiting/i.test(await fails('A', 'select public.respond_friend_request($1, true)', [req.id])));
+  await as('B', 'select public.respond_friend_request($1, true)', [req.id]);
+  ok('accepting makes you friends', (await one('A', 'select public.are_friends($1, $2) f', [U.A, U.B])).f === true);
+  ok('new friends see your auto-share accounts', await sees('B', a1) && await sees('A', b1));
+  ok('…but not the ones you keep private', !(await sees('B', a2)));
+  await as('A', 'insert into public.account_access (account_id, viewer) values ($1, $2)', [a2, U.B]);
+  ok('you can let one friend see another account', await sees('B', a2));
+  await as('A', 'delete from public.account_access where account_id = $1 and viewer = $2', [a2, U.B]);
+  ok('…and take it back', !(await sees('B', a2)));
+  ok('you cannot grant accounts to non-friends', /row-level security/i.test(await fails('A', 'insert into public.account_access (account_id, viewer) values ($1, $2)', [a2, U.C])));
+  ok("you cannot grant someone else's account", /row-level security/i.test(await fails('B', 'insert into public.account_access (account_id, viewer) values ($1, $2)', [a1, U.B])));
+  ok('direct inserts into friendships are blocked', /permission denied/i.test(await fails('A', `insert into public.friendships (requester, addressee, status) values ($1, $2, 'accepted')`, [U.A, U.C])));
+
+  ok('an account token makes you friends instantly', await add('C', tokA2.toLowerCase()) === 'account_added');
+  ok('…and shows you that account', await sees('C', a2));
+  ok('…and only that account', !(await sees('C', a1)));
+  const newTok = (await one('A', 'select public.rotate_account_token($1) t', [a2])).t;
+  ok('owners can regenerate a token', newTok !== tokA2);
+  ok('old tokens stop working', await add('D', tokA2) === 'not_found');
+  ok('only the owner can regenerate', /not your account/i.test(await fails('B', 'select public.rotate_account_token($1)', [a2])));
+
+  section('Add by Monopoly GO code or link');
+  ok('a MOGO code (any formatting) sends a request', await add('D', 'abc 123 xyz') === 'mogo_sent');
+  const mreq = await one('A', 'select * from public.friendships where requester = $1', [U.D]);
+  ok('the owner sees which account was looked up', mreq && mreq.via_account === a1);
+  ok('a MOGO link also works (no https, any case)', await add('D', 'MPLY.io/AB12CD') === 'mogo_sent');
+  ok('accounts that opt out cannot be found', await add('A', 'nope 9999 99') === 'not_found');
+  ok('nothing is visible before they accept', !(await sees('D', a1)));
+  await as('A', 'select public.respond_friend_request($1, true)', [mreq.id]);
+  ok('accepting shares just that account', await sees('D', a1) && !(await sees('D', a2)));
+
+  ok('unfriending works from either side', (await as('B', 'delete from public.friendships where least(requester, addressee) = least($1::uuid, $2::uuid) and greatest(requester, addressee) = greatest($1::uuid, $2::uuid) returning id', [U.A, U.B])).length === 1);
+  ok('…and removes the access grants', !(await sees('B', a1)) && (await db.query('select count(*)::int n from public.account_access where viewer = $1 and account_id = $2', [U.B, a1])).rows[0].n === 0);
+  ok('re-friending by friend code', await add('B', prof.find((p) => p.id === U.A).friend_code.toLowerCase()) === 'sent');
+  ok('a reverse request auto-accepts', await add('A', 'bob') === 'accepted');
+
+  section('Groups & invite tokens');
+  const g = await one('A', "insert into public.groups (name, visibility, owner) values ('Crypt Crew', 'private', auth.uid()) returning id");
+  ok('creating a private group returns it to the owner', !!g.id);
+  ok('owner becomes the owner member', (await one('A', 'select role from public.group_members where group_id = $1 and user_id = auth.uid()', [g.id])).role === 'owner');
+  ok('private groups are invisible to outsiders', (await as('C', 'select id from public.groups where id = $1', [g.id])).length === 0);
+  ok('outsiders cannot join by inserting a membership', /permission denied/i.test(await fails('C', 'insert into public.group_members (group_id, user_id) values ($1, auth.uid())', [g.id])));
+  const inv1 = (await one('A', 'select public.create_group_invite($1, 7, 1) t', [g.id])).t;
+  ok('admins create invite tokens MMG-XXXX-XXXX-XXXX', /^MMG-[2-9A-Z]{4}-[2-9A-Z]{4}-[2-9A-Z]{4}$/.test(inv1), inv1);
+  ok('invite tokens are hidden from non-admins', (await as('C', 'select * from public.group_invites where group_id = $1', [g.id])).length === 0);
+  ok('joining with a token works (any case)', (await one('C', 'select public.join_group($1) g', [inv1.toLowerCase()])).g === g.id);
+  ok('members then see the group', (await as('C', 'select id from public.groups where id = $1', [g.id])).length === 1);
+  ok('single-use tokens run out', /used up/i.test(await fails('D', 'select public.join_group($1)', [inv1])));
+  ok('re-using a token you already used is harmless', (await one('C', 'select public.join_group($1) g', [inv1])).g === g.id);
+  const inv2 = (await one('A', 'select public.create_group_invite($1, null, null) t', [g.id])).t;
+  await db.query("update public.group_invites set expires_at = now() - interval '1 minute' where token = $1", [inv2]);
+  ok('expired tokens are refused', /expired/i.test(await fails('D', 'select public.join_group($1)', [inv2])));
+  const inv3 = (await one('A', "select public.create_group_invite($1, 30, null, 'discord') t", [g.id])).t;
+  await as('A', 'update public.group_invites set revoked = true where token = $1', [inv3]);
+  ok('revoked tokens are refused', /not valid/i.test(await fails('D', 'select public.join_group($1)', [inv3])));
+  ok('made-up tokens are refused', /not valid/i.test(await fails('D', "select public.join_group('MMG-2222-2222-2222')")));
+  ok('members cannot make invite tokens', /only group admins/i.test(await fails('C', 'select public.create_group_invite($1)', [g.id])));
+  ok('only the owner changes roles', /only the group owner/i.test(await fails('C', "select public.set_group_role($1, $2, 'admin')", [g.id, U.C])));
+  await as('A', "select public.set_group_role($1, $2, 'admin')", [g.id, U.C]);
+  const inv4 = (await one('C', 'select public.create_group_invite($1, 1, 5) t', [g.id])).t;
+  ok('promoted admins can make tokens', !!inv4);
+  ok('admins can rename the group', (await as('C', "update public.groups set description = 'spooky' where id = $1 returning id", [g.id])).length === 1);
+  ok('nobody can remove the owner', (await as('C', 'delete from public.group_members where group_id = $1 and user_id = $2 returning user_id', [g.id, U.A])).length === 0);
+  await as('D', 'select public.join_group($1)', [inv4]);
+  ok('admins can remove members', (await as('C', 'delete from public.group_members where group_id = $1 and user_id = $2 returning user_id', [g.id, U.D])).length === 1);
+  const pub = await one('D', "insert into public.groups (name, visibility, owner) values ('Open Graveyard', 'public', auth.uid()) returning id");
+  const listed = await as('B', "select * from public.list_public_groups('grave')");
+  ok('public groups show in search with member counts', listed.length === 1 && Number(listed[0].member_count) === 1 && listed[0].is_member === false);
+  ok('private groups never show in search', (await as('B', "select * from public.list_public_groups('crypt')")).length === 0);
+  await as('B', 'select public.join_public_group($1)', [pub.id]);
+  ok('anyone can join a public group', (await as('B', 'select * from public.group_members where group_id = $1 and user_id = auth.uid()', [pub.id])).length === 1);
+  ok('private groups cannot be joined without a token', /private/i.test(await fails('E', 'select public.join_public_group($1)', [g.id])));
+
+  await as('C', 'insert into public.group_accounts (group_id, account_id) values ($1, $2)', [g.id, c1]);
+  ok('group members see accounts shared into the group', await sees('A', c1));
+  ok('people outside the group do not', !(await sees('B', c1)));
+  ok("cannot put someone else's account in a group", /row-level security/i.test(await fails('C', 'insert into public.group_accounts (group_id, account_id) values ($1, $2)', [g.id, a1])));
+
+  section('Trades');
+  const ins = `insert into public.trade_requests (created_by, giver, receiver, giver_account, receiver_account, stickers, status, group_id)
+               values (auth.uid(), $1, $2, $3, $4, '{5,6}', $5, $6) returning *`;
+  const t1 = await one('B', ins, [U.A, U.B, a1, b1, 'pending', null]);
+  ok('a friend can ask for stickers from an account they can see', t1 && t1.status === 'pending');
+  ok('…but not from an account hidden from them', /row-level security/i.test(await fails('B', ins, [U.A, U.B, a2, b1, 'pending', null])));
+  ok('strangers cannot send requests', /row-level security/i.test(await fails('E', ins, [U.A, U.E, a1, e1, 'pending', null])));
+  ok('group members can trade inside their group', !!(await one('A', ins, [U.C, U.A, c1, a1, 'pending', g.id])));
+  ok("cannot use an account that is not the giver's", /row-level security/i.test(await fails('B', ins, [U.A, U.B, d1, b1, 'pending', null])));
+  ok('cannot create a "sent" trade for someone else', /row-level security/i.test(await fails('B', ins, [U.A, U.B, a1, b1, 'sent', null])));
+  ok('direct status edits are blocked', /permission denied/i.test(await fails('B', "update public.trade_requests set status = 'done' where id = $1", [t1.id])));
+  ok('outsiders cannot see the trade', (await as('E', 'select id from public.trade_requests where id = $1', [t1.id])).length === 0);
+  ok('the asker cannot accept their own request', /other person/i.test(await fails('B', "select * from public.trade_action($1, 'accept')", [t1.id])));
+  ok('the giver accepts', (await one('A', "select * from public.trade_action($1, 'accept')", [t1.id])).status === 'accepted');
+  ok('only the giver can mark it sent', /only the sender/i.test(await fails('B', "select * from public.trade_action($1, 'sent')", [t1.id])));
+  ok('giver marks it sent', (await one('A', "select * from public.trade_action($1, 'sent')", [t1.id])).status === 'sent');
+  ok('only the receiver confirms', /only the receiver/i.test(await fails('A', "select * from public.trade_action($1, 'done')", [t1.id])));
+  ok('receiver confirms it arrived', (await one('B', "select * from public.trade_action($1, 'done')", [t1.id])).status === 'done');
+  ok('the giver can log a trade as already sent', (await one('A', ins, [U.A, U.B, a1, b1, 'sent', null])).status === 'sent');
+  const t3 = await one('B', ins, [U.A, U.B, a1, b1, 'pending', null]);
+  ok('the giver can accept-and-send in one step', (await one('A', "select * from public.trade_action($1, 'sent')", [t3.id])).status === 'sent');
+
+  const open = await one('C', `insert into public.trade_requests (created_by, receiver, receiver_account, stickers, status, group_id, receiver_name)
+                               values (auth.uid(), auth.uid(), $1, '{9}', 'open', $2, 'Cara Main') returning *`, [c1, g.id]);
+  ok('members can post an open ask to a group', open.status === 'open');
+  ok('other members see open asks', (await as('A', 'select id from public.trade_requests where id = $1', [open.id])).length === 1);
+  ok('non-members do not', (await as('B', 'select id from public.trade_requests where id = $1', [open.id])).length === 0);
+  ok('you cannot claim your own ask', /cannot claim/i.test(await fails('C', "select * from public.trade_action($1, 'claim', $2)", [open.id, c1])));
+  ok('claiming needs one of your accounts', /pick one of your/i.test(await fails('A', "select * from public.trade_action($1, 'claim', $2)", [open.id, c1])));
+  const claimed = await one('A', "select * from public.trade_action($1, 'claim', $2)", [open.id, a2]);
+  ok('a member claims the ask', claimed.status === 'accepted' && claimed.giver === U.A && claimed.giver_name === 'Alice Alt');
+  ok('nobody else can claim it after', /already picked up/i.test(await fails('A', "select * from public.trade_action($1, 'claim', $2)", [open.id, a2])));
+
+  section('Partner events');
+  const pid = (await one('A', "select public.create_partnership('partner', 'Haunted build', $1) id", [a1])).id;
+  ok('create a partner event', !!pid);
+  ok('cannot invite strangers', /invite friends/i.test(await fails('A', 'select public.invite_to_partnership($1, $2)', [pid, U.E])));
+  await as('A', 'select public.invite_to_partnership($1, $2)', [pid, U.B]);
+  ok('invitee sees the invite', (await as('B', 'select status from public.partnership_members where partnership_id = $1 and user_id = auth.uid()', [pid]))[0]?.status === 'invited');
+  ok('invitee must pick their own account', /pick one of your/i.test(await fails('B', 'select public.respond_partnership($1, true, $2)', [pid, a1])));
+  await as('B', 'select public.respond_partnership($1, true, $2)', [pid, b1]);
+  ok('invitee joins', (await one('A', 'select count(*)::int n from public.partnership_members where partnership_id = $1 and status = $2', [pid, 'joined'])).n === 2);
+  ok('a partner pair is full at 2', /full/i.test(await fails('A', 'select public.invite_to_partnership($1, $2)', [pid, U.C])));
+  await as('B', 'update public.partnership_members set progress = 4200 where partnership_id = $1 and user_id = auth.uid()', [pid]);
+  ok('members update their own progress', (await one('A', 'select progress from public.partnership_members where partnership_id = $1 and user_id = $2', [pid, U.B])).progress === 4200);
+  await as('B', 'update public.partnership_members set progress = 1 where partnership_id = $1 and user_id = $2', [pid, U.A]);
+  ok("…but not someone else's", (await one('A', 'select progress from public.partnership_members where partnership_id = $1 and user_id = $2', [pid, U.A])).progress === 0);
+  ok('only the creator edits the event', (await as('B', "update public.partnerships set title = 'x' where id = $1 returning id", [pid])).length === 0);
+  ok('outsiders cannot see the event', (await as('E', 'select id from public.partnerships where id = $1', [pid])).length === 0);
+  for (let k = 0; k < 3; k++) await as('A', "select public.create_partnership('partner', 'more', $1)", [a1]);
+  ok('an account is capped at 4 Partner Build pairings', /maximum 4/i.test(await fails('A', "select public.create_partnership('partner', 'fifth', $1)", [a1])));
+  const team = (await one('A', "select public.create_partnership('racers', 'Crypt racers', $1, $2, true) id", [a2, g.id])).id;
+  ok('group members see an open team event', (await as('C', 'select id from public.partnerships where id = $1', [team])).length === 1);
+  await as('C', 'select public.respond_partnership($1, true, $2)', [team, c1]);
+  ok('group members can join an open team event', (await one('A', 'select count(*)::int n from public.partnership_members where partnership_id = $1 and status = $2', [team, 'joined'])).n === 2);
+  ok('outsiders cannot join an open team event', /not invited/i.test(await fails('B', 'select public.respond_partnership($1, true, $2)', [team, b1])));
+
+  section('Signed out & deletion');
+  ok('signed-out visitors cannot call actions', /permission denied|sign in/i.test(await fails(null, "select public.add_friend('bob')")));
+  ok('signed-out visitors cannot read shared accounts', /permission denied/i.test(await fails(null, 'select * from public.shared_accounts')));
+  ok('internal functions cannot be called by players', /permission denied/i.test(await fails('A', 'select public.mm__befriend($1, $2)', [U.A, U.E])));
+  await db.query('delete from auth.users where id = $1', [U.D]);
+  ok('deleting a user removes their profile, groups and accounts', (await db.query('select (select count(*) from public.profiles where id = $1)::int + (select count(*) from public.groups where owner = $1)::int + (select count(*) from public.shared_accounts where owner = $1)::int n', [U.D])).rows[0].n === 0);
+} catch (e) {
+  fail++; log(`<span class="bad">ERROR</span> ${esc(e.message || e)}`);
+  console.error(e);
+}
+log(`\n<b class="${fail ? 'bad' : 'ok'}">${pass} passed, ${fail} failed</b>`);
+window.__results = { pass, fail, lines: lines.map((l) => l.replace(/<[^>]+>/g, '')) };
+</script>
+</body>
+</html>

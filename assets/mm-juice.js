@@ -268,7 +268,7 @@
   }, { passive: true });
 
   /* ---------------------------------------------------------------- page transitions */
-  const ORDER = ['album', 'accounts', 'trades', 'events', 'games', 'vault', 'progress', 'collection', 'io', 'lab'];
+  const ORDER = ['album', 'accounts', 'trades', 'social', 'events', 'games', 'vault', 'progress', 'collection', 'io', 'lab'];
   let navDir = 'fwd', navAt = 0;
   const origGo = MM.go;
   MM.go = function (page, opts) {
@@ -657,7 +657,7 @@
   /* ---------------------------------------------------------------- keyboard shortcuts (desktop) */
   // the Games page is intentionally hidden in this build, so shortcuts skip it
   const NAV = ORDER.filter((p) => p !== 'games');
-  const KEYS = [['1 – 9', 'Jump to a page'], ['[ ]', 'Previous / next page'], ['/', 'Search sets & stickers'], ['T', 'Switch theme'], ['M', 'Sound effects on/off'], ['J', 'Juice level'], ['?', 'This list']];
+  const KEYS = [['1 – 9, 0', 'Jump to a page'], ['[ ]', 'Previous / next page'], ['/', 'Search sets & stickers'], ['T', 'Switch theme'], ['M', 'Sound effects on/off'], ['J', 'Juice level'], ['?', 'This list']];
   function showKeys() {
     if (!MM.modal) return;
     MM.modal({ title: 'Keyboard shortcuts', ico: 'i-sparkle', body: `<div class="mm-keys">${KEYS.map(([k, d]) => `<div><kbd>${k}</kbd>${d}</div>`).join('')}</div><p class="note">There may also be a secret code. Old-school gamers know it.</p>` });
@@ -673,7 +673,7 @@
     if (MM.page === 'games' || ($('#modal-root') && $('#modal-root').children.length) || document.body.classList.contains('tutorial') || $('#story.on') || $('#celebrate.on')) return;
     const k = e.key;
     let hit = true;
-    if (/^[1-9]$/.test(k)) { const p = NAV[+k - 1]; if (p) MM.go(p); else hit = false; }
+    if (/^[0-9]$/.test(k)) { const p = NAV[k === '0' ? 9 : +k - 1]; if (p) MM.go(p); else hit = false; }
     else if (k === '[' || k === ']') { const i = Math.max(0, NAV.indexOf(MM.page)), n = NAV.length; MM.go(NAV[(i + (k === ']' ? 1 : -1) + n) % n]); }
     else if (k === '/') { const s = $('#rail-search'); const alt = $('.page:not([hidden]) input[type="search"]'); const f = s && s.offsetParent ? s : alt; if (f) { f.focus(); } else hit = false; }
     else if (k === 't' || k === 'T') MM.toggleTheme && MM.toggleTheme();

@@ -22,7 +22,7 @@
 
   then visit `http://localhost:8000`. (Serving it enables the offline service worker and "Install app".)
 
-Everything you enter stays in your browser. Use **Import / Export → Full backup (.json)** to move to another device.
+Everything you enter stays in your browser. Sign in under **Friends** (once the site owner has connected Supabase) to back it up and use it on other devices, or use **Import / Export → Full backup (.json)**.
 
 ## What's inside
 
@@ -34,6 +34,20 @@ Everything you enter stays in your browser. Use **Import / Export → Full backu
 | **Star Vault & Progress** | vault stars from spares, milestones, leaderboards |
 | **Collection** | 53 favicon / app-icon rewards unlocked by completing sets |
 | **Import / Export** | CSV account lists, friend lists and sticker exports with preview + undo |
+| **Friends & Groups** | cloud save, friends, groups with invite tokens, trade requests and partner events (needs Supabase) |
+
+## Friends & Groups ☁️
+
+Players sign in to their own account; the album keeps working on the device without one.
+
+- **Cloud save:** the same album on phone and computer, with a choice when two devices disagree.
+- **Add friends** by `@username`, friend code `MM-XXXX-XXXX`, a per-account token `MMA-XXXX-XXXX-XXXX` (instant friendship that shows **only that account**), or a **Monopoly GO friend code or link**.
+- **You decide what each friend sees:** tick your accounts per friend, set accounts to share with new friends automatically, or make one public.
+- **Groups:** private groups are joined with admin-made invite tokens `MMG-XXXX-XXXX-XXXX` (expiry, use limits, revoke). Public groups can be browsed. Each group has a "Looking for" board, its own partner events, member albums and admin roles.
+- **Trading together:** friends' shared albums appear read-only in the Album, Trade Planner and Smart Planner. Sends become trade requests that both sides confirm, and sticker counts update on "sent" and "received".
+- **Partner events:** Partner Build and Community Chest pairs (4 / 3 partners per account), Racers teams of 4, Adventure Club teams of 5, with team progress.
+
+Setup (about 15 minutes, free): **[docs/SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md)**. Every rule about who can see or change what lives in [`supabase/schema.sql`](supabase/schema.sql) and is covered by 118 automated checks in `tools/test-schema.html`.
 
 ## Juice ✨
 
@@ -78,6 +92,8 @@ Bump `VERSION` in `service-worker.js` when you ship changes so installed copies 
 ```
 index.html              the app (styles, markup and engine)
 assets/mm-juice.*       animation / sound / feel layer
+assets/mm-cloud.*       Friends & Groups (Supabase) — mm-cloud-config.js holds the project URL + public key
+supabase/schema.sql     database tables + security rules (run once in Supabase)
 assets/mm-*.js          artwork maps (key → file path)
 assets/stickers/        full-resolution sticker art
 assets/stickers-thumbs/ grid-size sticker art (generated)
@@ -85,6 +101,8 @@ assets/…                tokens, favicons, events, trick-or-treat, UI art, PWA 
 samples/                example CSVs for trying imports
 service-worker.js       offline support
 tools/make_thumbs.py    thumbnail builder
+tools/test-schema.html  security-rule tests (in-browser PostgreSQL)
+tools/mock-supabase.js  local fake backend for trying Friends & Groups on localhost
 docs/                   update notes, audits and the original readme
 ```
 

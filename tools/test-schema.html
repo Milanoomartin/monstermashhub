@@ -61,8 +61,18 @@ try {
   db = new PGlite();
   await db.exec(await get('supabase-stubs.sql'));
   const schema = await get('../supabase/schema.sql');
+  // leftovers from earlier versions, with different return types (this is what broke a real upgrade)
+  await db.exec(`
+    create table public.spaces (id uuid primary key);
+    create function public.join_group(token text) returns uuid language sql as $f$ select null::uuid $f$;
+    create function public.join_public_group(grp uuid) returns void language sql as $f$ select $f$;
+    create function public.respond_partnership(partnership uuid, accept boolean, account uuid default null) returns void language sql as $f$ select $f$;
+    create function public.list_public_groups(search text default '') returns table (id uuid, is_member boolean) language sql as $f$ select null::uuid, false $f$;
+    create function public.send_friend_request(target text) returns text language sql as $f$ select 'x' $f$;
+    create function public.mm__handle_old() returns int language sql as $f$ select 1 $f$;`);
   await db.exec(schema);
-  ok('schema.sql runs cleanly', true);
+  ok('schema.sql runs cleanly over an earlier version', true);
+  ok('old functions and tables are gone', (await db.query("select to_regclass('public.spaces') t, (select count(*)::int from pg_proc where proname in ('send_friend_request', 'mm__handle_old')) n")).rows.every((r) => r.t === null && r.n === 0));
   await db.exec(schema);
   ok('schema.sql can be re-run', true);
 

@@ -40,6 +40,32 @@ drop table if exists public.user_roles cascade;
 drop table if exists public.roles cascade;
 drop table if exists public.user_state cascade;
 drop table if exists public.profiles cascade;
+-- tables from earlier versions of this file
+drop table if exists public.space_accounts cascade;
+drop table if exists public.space_members cascade;
+drop table if exists public.spaces cascade;
+
+-- Functions from this file and its earlier versions are dropped first, because PostgreSQL
+-- cannot change a function's return type with "create or replace".
+do $$
+declare f record;
+begin
+  for f in select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public' and (p.proname like 'mm\_%' or p.proname = any (array[
+             -- current
+             'has_perm', 'is_admin', 'are_friends', 'group_role', 'is_group_member', 'has_group_row', 'is_group_admin', 'owns_account',
+             'can_view_account', 'is_partnership_member', 'can_see_partnership', 'partnership_size', 'partner_slots_used', 'partner_slot_cap',
+             'add_friend', 'respond_friend_request', 'rotate_account_token', 'account_links', 'leaderboard', 'find_players',
+             'create_group_invite', 'join_group', 'join_public_group', 'invite_to_group', 'respond_group_invite', 'approve_group_member',
+             'set_group_role', 'list_public_groups', 'trade_action', 'create_partnership', 'invite_to_partnership', 'respond_partnership',
+             'approve_partner', 'create_role', 'update_role', 'delete_role', 'assign_role', 'mod_clear_avatar', 'mod_update_profile',
+             -- earlier versions
+             'send_friend_request', 'join_space', 'join_public_space', 'rotate_space_code', 'list_public_spaces',
+             'is_space_member', 'share_a_space', 'can_reach', 'account_in_my_spaces']))
+  loop
+    execute format('drop function if exists %s cascade', f.sig);
+  end loop;
+end $$;
 
 -- ---------- helpers ----------
 -- Readable random code (no 0/O/1/I/L), from cryptographically strong random bytes.

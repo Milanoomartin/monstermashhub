@@ -1,0 +1,33 @@
+Monster Mash Trade Hub — Monster Mash Arcade Update
+
+WHAT WAS ADDED
+- Dedicated Games page in desktop navigation and mobile More menu.
+- 72 playable minigames across 18 different mechanics.
+- 12-character arcade cast selector, including Frankie, Disco Drac, Ghostly Guide, Wolfie, Rags, Swampie, Hexie and Skyblade/Demon Hunter characters.
+- Five intensity levels: Chill, Easy, Medium, Hard and Nightmare.
+- Search, category and intensity filters, favorites, random-game button, play counts and persistent high scores.
+- Full touch/mouse controls plus keyboard controls where useful.
+
+ARTWORK INTEGRATION
+- Sticker images appear in treasure, memory, breakout, catch, runner, pop and other cabinets.
+- Favicons are playable characters and targets.
+- Tokens appear in themed covers, racers and related games.
+- Trick or Treat buckets are used in catch games.
+- Existing jumpscare art/sound can trigger in high-intensity failures.
+- Halloween/Monster Mash emoji are used as hazards, markers and targets.
+
+MONOPOLY GO-INSPIRED CABINETS
+The arcade includes fan-made haunted variations inspired by mechanics seen in Prize Drop, Treasures/Dig events, Racers, Partner builds, Juggle Jam-style events, Wheel Boost and Adventure Club card challenges. These are unofficial fan minigames, not copies of the live MONOPOLY GO event data or reward economy.
+
+Sources used for mechanical inspiration:
+- Prize Drop behind-the-scenes: https://www.monopolygo.com/news/38
+- Prize Drop help: https://monopolygo.helpshift.com/hc/pt/3-monopoly-go/faq/33-prize-drop/
+- Racers overview: https://www.monopolygo.com/news/143/speed-through-incredible-rewards-with-racers-ready-set-roll
+- Juggle Jam mention: https://www.monopolygo.com/news/47
+- Seasonal Racers/Partners/Treasures overview: https://www.monopolygo.com/news/164/monopoly-ever-after
+
+TOUR
+Four new tutorial stops cover the Arcade hub, character selection, Monopoly GO-inspired cabinets and intensity/high-score system.
+
+PWA
+Cache bumped to v13-arcade. No new remote dependencies were added; the games reuse the artwork already packaged with the full Trade Hub.

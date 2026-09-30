@@ -1,0 +1,15 @@
+Monster Mash Trade Hub — PWA / Favicon Icon Update
+
+This is now integrated into the full Trade Hub package.
+
+- 53 character favicons are included.
+- 5 starter favicon choices are available immediately.
+- 45 favicon characters unlock by completing their linked Monster Mash sets.
+- 3 additional favicon rewards unlock from album/prestige milestones.
+- The Collection page now clearly labels Favicons & App Icons.
+- Locked favicon rewards remain visible with the exact set or milestone needed.
+- Any unlocked favicon can be used as the browser tab icon or PWA/home-screen app icon.
+- The Potion Lab includes a grouped favicon/app-icon picker.
+- App icon and browser favicon are separate selections.
+
+Note: An already installed PWA may need to be reinstalled or its shortcut refreshed to display a newly selected launcher icon.

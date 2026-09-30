@@ -1,0 +1,5 @@
+format,version,player_id,name,friend_link,friendship_code,note,device,ownership,friends_member,stickerbank_member,category,avatar
+monster-mash/sample-friends,2,SAMPLE-WOLFIE-F1,Wolfie,https://friend.example.invalid/mm/wolfie-P9L2X6,MOGO-WOLFIE-P9L2X6,Demo friend — not a real account,Sample Phone,external,true,false,demo,f49
+monster-mash/sample-friends,2,SAMPLE-LUNA-F2,Luna,https://friend.example.invalid/mm/luna-R5C8Y2,MOGO-LUNA-R5C8Y2,Demo friend — not a real account,Sample Phone,external,true,false,demo,f42
+monster-mash/sample-friends,2,SAMPLE-GUIDE-F3,Ghostly Guide,https://friend.example.invalid/mm/ghostly-guide-V2N7K4,MOGO-GUIDE-V2N7K4,Demo friend — not a real account,Sample Tablet,external,true,false,demo,f04
+monster-mash/sample-friends,2,SAMPLE-WITCH-F4,Witching Hour,https://friend.example.invalid/mm/witching-hour-H6Q3M8,MOGO-WITCH-H6Q3M8,Demo friend — not a real account,Sample Phone,external,true,false,demo,f21

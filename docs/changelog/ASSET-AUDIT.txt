@@ -1,0 +1,64 @@
+MONSTER MASH TRADE HUB - FINAL ASSET / STICKER AUDIT
+Generated: 2026-09-21
+
+FINAL STATUS
+- The four sticker artworks previously flagged for banner/title errors have now been replaced with the latest corrected images from the user's recent image edits.
+- No known artwork issues from the previous audit remain.
+- All site image assets remain external WebP files and all mapped paths resolve.
+
+LATEST CORRECTED ARTWORK APPLIED
+1) Set 2 #7 HUNTR/X — 1 star, regular
+   File: assets/stickers/set-02-welcome-to-the-mansion/07-huntr-x.webp
+   Verified visible title: HUNTR/X
+   Verified white/regular frame and 1 visible star.
+2) Set 11 #9 Boggy Nights — 4 stars, regular
+   File: assets/stickers/set-11-the-swamp-monster/09-boggy-nights.webp
+   Verified visible title: Boggy Nights
+   Verified white/regular frame and 4 visible stars.
+3) Set 12 #3 Soggy Bayou — 3 stars, regular
+   File: assets/stickers/set-12-evil-deeds/03-soggy-bayou.webp
+   Verified visible title: Soggy Bayou
+   Verified white/regular frame and 3 visible stars.
+4) Set 14 #2 King of Swing — 3 stars, regular
+   File: assets/stickers/set-14-the-ghost/02-king-of-swing.webp
+   Verified visible title: King of Swing
+   Verified white/regular frame and 3 visible stars.
+
+LOSSLESS FORMAT NORMALIZATION
+- Each latest PNG replacement was encoded as lossless WebP.
+- Pixel comparison after decoding matched the source PNG exactly for all four replacements.
+- Transparency remains present (alpha range 0-255).
+- All asset image files shipped by the site are WebP.
+
+FULL DATA / LINKAGE VALIDATION
+- 22 sets
+- 198 stickers (9 per set)
+- 30 Gold stickers
+- 612 total sticker stars
+- 198 sticker WebP files
+- 49 token WebP files
+- 53 favicon WebP files
+- 6 UI WebP files
+- 306 MM_ART entries
+- 0 missing mapped asset paths
+- 0 missing sticker map keys
+- 0 title-to-filename mismatches
+- 0 exact duplicate sticker files
+- Per-set rarity spreads match the audited September 20 preview structure.
+- Gold distribution remains 30 total across Sets 13-22: 1,1,1,2,3,3,4,4,5,6.
+
+PREVIOUS CODE / LINKAGE CORRECTIONS RETAINED
+- Set 22 #9 canonical title is Cough! Cough! Cough! (6-star, regular). The old Couch spelling remains only as an import alias for compatibility.
+- Set 17 Boogie Bash corrected linkage remains in place for Dance Idols, Do The Worm, Shredding, Wall Flowers, Punchline, and To Be Free.
+- Token and favicon IDs remain linked to their supplied numbered assets.
+
+SPOT-CHECKED PRIOR VISUAL CORRECTIONS
+- Dracula's Castle: 4-star regular
+- Chilling: 4-star regular, canonical title is Chilling (not Chillings)
+- Ecto-1: 5-star Gold
+- Shh!: 4-star regular
+- Big Town Heroes: 6-star regular
+- Cough! Cough! Cough!: 6-star regular
+
+SOURCE NOTE
+MonopolyGO.wiki's September 20 Monster Mash preview reports 22 sets, 198 stickers, and 30 Gold Stickers, and states that the set images are the reference for sticker names, star ratings, and Gold status. It also labels the information as an early preview that may change before the September 23 release.

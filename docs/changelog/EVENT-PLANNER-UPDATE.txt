@@ -1,0 +1,85 @@
+Monster Mash Trade Hub — Event Planner + Slime Time Update
+September 22, 2026
+
+SLIME TIME
+- Slime Time now uses the six-frame full-screen slime sequence created for the Monster Mash project.
+- The ooze grows from the top of the viewport until the screen is coated in slime.
+- The slime is rendered on a fixed viewport canvas, so it remains over the visible screen while the page scrolls underneath.
+- Drag or swipe across the slime to wipe transparent paths through it and reveal the page.
+- Desktop wheel scrolling remains available; mobile uses vertical pan behavior while horizontal/diagonal gestures can wipe.
+- A long wipe clears the remaining slime with a short dissolve. Toggling Slime Time off/on summons it again.
+
+EVENT PLANNER
+A new Event Planner page has four collaborative-event tabs:
+1. Community Chest
+2. Racers
+3. Partner Build
+4. Adventure Club
+
+COMMUNITY CHEST
+- Three seasonal partner/chest slots.
+- Chest level tracker (0–3), current level progress, Community Chest landings.
+- Three collaborative tasks per partner, with separate Me / Partner completion checks.
+- Key status is calculated when both halves of a task are complete.
+- Level 1/2/3 prize fields plus actual chest-opened prize field.
+- Weekly key, maxed-chest and average-progress summary.
+- Season/week fields and strategy notes.
+
+Mechanics researched from Monopoly GO support:
+- The redesigned Community Chest uses 3 partners for a season.
+- Each partner has a shared chest with 3 chest levels.
+- Chest progress/tasks/prizes refresh weekly while the partner group remains through the season.
+- There are 3 collaborative tasks per partner per week (up to 9 total), and both players must complete their halves to earn a key.
+
+RACERS
+- Full team roster with flags used, race points and notes.
+- Flag bank, points-per-lap, base flags-per-roll and planning ratio fields.
+- Race cards for placement, race points, laps, lap rewards and notes.
+- Automatic projected championship points for the current 10/8/5/3 and 20/16/10/6 final-race scale.
+- Championship standings board and editable prize table.
+- Booster planning for Hyperdrive, Overload, Spring and Lucky Rocket style boosts.
+- Copyable race-plan summary.
+
+Current starter template:
+- Transylvania Racers, Sep 23–27, 2026.
+- 3 races, 4-player teams, 100 starting Flags.
+- 300 points per lap, 20 Flags per base roll.
+- Race 1/2 championship points 10/8/5/3; Race 3 doubles to 20/16/10/6.
+- Current published team prize table is prefilled and fully editable.
+
+PARTNER BUILD
+- Four attraction slots.
+- Partner name, my points, partner points, target, event currency spent and notes per attraction.
+- Editable 5-level milestone thresholds and prize fields.
+- Claimed markers per milestone.
+- Combined completion/progress calculations across all four builds.
+- Grand-prize field and global event currency bank.
+
+Mechanics researched from Monopoly GO support / recent 2026 event examples:
+- Four board slots are shared with four partners.
+- Both players contribute event currency and wheel points.
+- Coop currency can come from the board, Quick Wins, tournaments and milestone events.
+- Finishing all four attractions unlocks the grand prize.
+- The 2,500 / 8,500 / 21,500 / 48,000 / 80,000 starter thresholds are based on a recent 2026 configuration and remain editable.
+
+ADVENTURE CLUB
+- Fixed 5-player team roster and contribution tracker (you + 4 teammates).
+- Adventure Token bank, map number and card meter.
+- Base deck counter for cards 2 through 10, up to four copies each.
+- Power card counters: Fire, Ice, Team Boost, Shuffle, Gift Giver.
+- Fire/Ice streak trackers.
+- Editable map list with progress, targets, map rewards and optional treasures.
+- Editable object/action board with difficulty, progress, target and reward.
+- Map and object completion summary.
+
+Mechanics researched from current Monopoly GO support:
+- Current 2026 Adventure Club format uses a 5-player party; the planner is fixed to five rather than the earlier larger-team format.
+- Actions succeed when drawn card value meets/exceeds the action difficulty.
+- Four successful actions can trigger Fire and an extra card draw.
+- Consecutive failures build Ice assistance up to 4.
+- Team Boost scales with teammates working on the same target.
+- Shuffle resets the deck/card count.
+- Optional treasures can be lost after advancing past a level.
+
+NOTE
+Collaborative event structures, team sizes, milestones, point values and prizes can change between event editions. The planner deliberately makes event-specific values editable while using current/recent mechanics as useful starter templates.

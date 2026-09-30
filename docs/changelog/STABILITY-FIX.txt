@@ -1,0 +1,44 @@
+MONSTER MASH TRADE HUB — ARTWORK + AUDIO STABILITY FIX
+September 21, 2026
+
+WHY SOME IMAGES COULD TURN INTO BLANK BOXES
+The three artwork mapping bundles were loaded with async script tags. That created a timing race: the page could render and mark image placeholders before the asset map containing their paths had arrived. Because the old hydrator considered some image elements finished after its first attempt, a late bundle or a browser sleep/network hiccup could leave a blank box without a retry.
+
+ARTWORK FIXES
+- Artwork map scripts now load with defer in deterministic order.
+- Every artwork bundle now announces when it has arrived.
+- The page repairs any waiting image placeholders when a bundle arrives.
+- Failed image elements automatically retry several times.
+- Failed decoded Image objects used for canvas/export are discarded and recreated.
+- Artwork is checked/repaired when the page returns from the background, restores from browser back/forward cache, or comes back online.
+- Existing service-worker image caching remains in place.
+
+WHY SOUND COULD SHOW ON BUT BE SILENT
+Web Audio is subject to browser autoplay rules. Firefox and mobile browsers can also suspend an AudioContext after a tab is backgrounded or a device sleeps. The previous build only registered one first-interaction audio wake-up. If the browser suspended audio again later, the setting could remain enabled while the audio engine stayed suspended.
+
+AUDIO FIXES
+- Audio resume is attempted on every pointer/touch/keyboard interaction.
+- Audio is also checked when the tab becomes visible again or restores from page cache.
+- A closed/discarded AudioContext is rebuilt automatically.
+- Sound effects wait for a successful AudioContext resume before firing.
+- Haunted ambience keeps its saved on/off preference separate from the temporary runtime state.
+- The toolbar can show “Haunted ambience · tap to wake” when enabled but temporarily suspended.
+- Potion Lab now includes an Audio status readout and a “Wake + test” button.
+
+SERVICE WORKER
+Cache version bumped from monster-mash-v4 to monster-mash-v5-stability so the updated application shell replaces the older cached build.
+
+VALIDATION
+- 22 sets
+- 198 stickers
+- 30 Gold stickers
+- 612 total printed stars
+- 306 mapped artwork entries
+- 198 sticker images
+- 53 favicon images
+- 0 missing mapped artwork files
+- 0 exact duplicate sticker files
+- Inline JavaScript syntax: PASS
+- Artwork bundle JavaScript syntax: PASS
+- Service worker JavaScript syntax: PASS
+- Manifest JSON: PASS

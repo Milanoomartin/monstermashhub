@@ -1,0 +1,93 @@
+Monster Mash Trade Hub — Favicon & App Icon Rewards
+
+Total favicon characters: 53
+Starter choices: 5
+Set-completion favicon rewards: 45
+Album/Prestige favicon rewards: 3
+
+STARTER FAVICONS (available immediately)
+- f04 — Ghostly Guide
+- f08 — Hello, Friend Black Cat
+- f17 — Hat Trick Pumpkin
+- f20 — Pirate Pumpkin
+- f36 — Pumpkin Kid
+
+SET-COMPLETION FAVICON REWARDS
+Set 1 — Community Gallery
+  - f52 — Mystic Crow
+Set 2 — Welcome To The Mansion
+  - f32 — Pink Skyblade
+Set 3 — Dracula
+  - f01 — Disco Drac
+  - f45 — Disco Drac Wink
+Set 4 — Lurid Labs
+  - f07 — Slimed
+  - f12 — Mad for Science
+Set 5 — Grim Gardens
+  - f09 — Pumpkin Scarecrow
+Set 6 — Wolfie
+  - f05 — Enter Wolfie
+  - f26 — Family Pack
+  - f42 — Luna
+  - f49 — Wolfie
+Set 7 — Sleepless Night
+  - f16 — Mystery Solved Reaper
+  - f18 — Going Batty Knight
+Set 8 — Ms. Frankenstein
+  - f10 — I Do!
+  - f25 — I Do! Ghost Bride
+Set 9 — Halloween Games
+  - f24 — Bubble Bath Buddies
+  - f35 — Pink Rocker
+Set 10 — The Mummy
+  - f06 — Enter Rags
+  - f28 — Enter Rags Mummy
+  - f50 — Golden Mummy
+Set 11 — The Swamp Monster
+  - f14 — Enter Swampie
+  - f37 — Swampie
+Set 12 — Evil Deeds
+  - f13 — The Demon World
+Set 13 — The Zombie
+  - f41 — Friendly Slime
+Set 14 — The Ghost
+  - f22 — Sing Along
+  - f38 — Bride of Boo
+  - f46 — Ghost Bride Wink
+Set 15 — The Witch
+  - f02 — Enter Hexie
+  - f21 — Witching Hour
+  - f47 — Hexie
+Set 17 — Boogie Bash
+  - f11 — Prince of Darkness Serenade
+  - f30 — Disco Drac Dance
+  - f40 — Disco Drac Spotlight
+Set 18 — The Attic
+  - f15 — Be a Doll
+  - f19 — Spider Queen
+Set 19 — Trick Or Treat
+  - f23 — Snack Run Slime
+  - f27 — Headless Halloween Host
+Set 20 — Frankie Fun
+  - f03 — Enter Frankie
+  - f34 — Enter Frankie Smile
+Set 21 — Who You Gonna Call?
+  - f29 — Goo Crew
+  - f39 — Goo Crew Glow
+  - f48 — Goo Crew Hyper
+Set 22 — Demons & Hunters
+  - f31 — Purple Skyblade
+  - f33 — Midnight Skyblade
+  - f51 — Hello, Friend Cat
+
+ALBUM / PRESTIGE REWARDS
+- f43 — Purple Skyblade Night — Prestige 1
+- f44 — Pink Skyblade Night — Prestige 2
+- f53 — Hello, Friend Top Hat Cat — Album completion
+
+Behavior
+- Starter icons can be used immediately as browser favicons and PWA/home-screen icons.
+- Locked icons remain visible with their unlock requirement.
+- Completing the linked set automatically unlocks its favicon reward.
+- App icon and browser-tab favicon are separate choices.
+- Existing installed PWAs may need reinstalling or refreshing the shortcut before a newly selected launcher icon appears.

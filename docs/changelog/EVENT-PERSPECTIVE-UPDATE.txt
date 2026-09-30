@@ -1,0 +1,33 @@
+Monster Mash Trade Hub — Event Perspective + Animated Event Art Update
+
+EVENT PERSPECTIVES
+- Community Chest now has a separate 3-partner board for each tracked account perspective.
+- Partner Build now has a separate 4-partner board for each tracked account perspective.
+- Selecting another tracked account as a partner automatically creates the reciprocal relationship on that account's board.
+- Reciprocal assignments are blocked if the other account has no legal open slot, preventing over-accepting partners.
+- Partner Build contributions mirror across tracked perspectives: one account's My Points appear as the other account's Partner Points.
+- Racers remains one shared 4-player team. Changing perspective never creates a different racer roster.
+- Adventure Club remains one shared 5-player team. Changing perspective never creates a different Adventure roster.
+
+COMMUNITY CHEST
+- Yellow, Green and Pink partner placement is local to each account perspective, so the same relationship can appear under different colors for different accounts.
+- Each perspective records the exact task for the current account and the exact task for the partner.
+- Selected Trade Hub account avatar/icon and account name are overlaid into the themed Community Chest artwork and partner progress bars.
+- Supplied gold/yellow, green and pink key art is animated with a continuous 3D front/back spin.
+
+RACERS
+- The supplied haunted Racer visual is used in the Event Planner.
+- The four selected team account avatars and names are overlaid directly onto the Racer visual.
+- Eight supplied transparent flag-angle frames cycle continuously for an animated spinning flag effect.
+
+SPIDER CLEAR
+- Clicking a roaming spider now erupts into a 32-spider swarm.
+- Nine web splats appear around the viewport.
+- The existing creeping cobweb animation follows the swarm.
+
+TOUR
+- The tutorial now explains Community Chest perspective boards, per-account colors/tasks, reciprocal Partner Build pairing, shared Racers/Adventure rosters, spinning flags/keys, and the larger spider swarm/web-splat behavior.
+
+PWA
+- Service worker cache: monster-mash-v14-event-perspectives.
+- New Event Planner art is included in the offline cache.

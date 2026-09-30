@@ -1,0 +1,32 @@
+MONSTER MASH TRADE HUB — MOBILE / PRIVACY / COPY / AUDIO UPDATE
+Updated: 2026-09-21
+
+SAMPLE DATA / PRIVACY
+- In-app sample identities are fictional Monster Mash character names with matching profile icons.
+- Runtime sample names are shuffled on each sample load; SAMPLE-* player IDs, MOGO-* demo codes and friend links are regenerated.
+- Demo friend links use the reserved .invalid domain, so they cannot resolve to a real player link.
+- Shipped sample CSVs contain only clearly labeled SAMPLE-* identities and .invalid links.
+- Removed prior real-looking/sample account references from shipped sample content.
+
+REMOVED
+- Scan Sets button and screenshot-set scanner feature.
+- Scanner settings, model/API-key UI and scanner implementation hooks.
+- Old scanner key is only deleted from local storage during state normalization.
+
+TRADE POST — COPY IMAGE
+- PNG is created synchronously during the button click before clipboard.write(), preserving transient user activation in stricter browsers such as Firefox/Safari.
+- Uses ClipboardItem image/png when available in a secure context.
+- Falls back to a legacy browser-compatible image-copy path when direct PNG clipboard write is blocked.
+- Save Image remains available as a final fallback.
+
+MOBILE / WEB APP
+- Responsive controls, cards, grids, modals and trade-post layout for phone widths.
+- Touch targets enlarged for coarse-pointer devices; form inputs stay at 16px on mobile to avoid unwanted zoom.
+- Safe-area / viewport-fit support for notched devices and standalone mode.
+- Added installable PWA manifest, service worker, app icons, maskable icons and Install App controls.
+- All site artwork remains WebP. Standard PWA launcher/touch icons are PNG intentionally for broad platform compatibility.
+- Offline caching starts after the app has been served over HTTP/HTTPS and its service worker has installed.
+
+SOUND / AMBIENCE
+- Reworked ambience toward cold wind, low drones, distant whispers, crypt creaks, sparse detuned bells and storm rumbles.
+- Added dedicated crypt-creak and whisper effects and darker sound-preview controls.

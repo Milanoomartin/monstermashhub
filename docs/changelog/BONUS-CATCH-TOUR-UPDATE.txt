@@ -1,0 +1,61 @@
+Monster Mash Trade Hub — Catch Game + Timed Bonus Sets + Full Tour
+
+TRICK OR TREAT
+- Candy no longer requires clicking. Move the equipped bucket into candy to catch it.
+- Levels 1–3 intentionally stay at the easiest difficulty. Difficulty starts increasing at 50 treats.
+- Early candy is larger, slower, less crowded, has a larger catch radius, and a lower trick chance.
+- While Trick or Treat mode is active, the underlying site cannot be clicked or changed accidentally.
+- The mystery bucket in the top-right remains clickable so the hunt can always be turned off.
+- Touch players get a visible bucket following their finger while dragging; mouse players use the bucket cursor follower.
+- Boosts begin appearing after the earliest level:
+  * Candy Vortex — pulls every ordinary candy currently on-screen into the bucket at once.
+  * Double Treats — treats count twice for 15 seconds.
+  * Moon Freeze — slows candy for 12 seconds.
+- Existing treats, tricks, streaks, bucket unlocks and jump-scare artwork remain intact.
+
+THREE SPECIAL BONUS SETS
+- Added exactly three independent Bonus Sets below the main album.
+- Bonus Sets NEVER increase or alter the standard 22-set / 198-sticker totals.
+- They do not affect album completion, prestige, standard rewards or Star Vault calculations.
+- Each Bonus Set has its own editable start/end trading window.
+- Before start: set is time-locked.
+- During its window: ownership/spares can be tracked and stickers can be sent.
+- After end: set is archived/read-only and sending is closed.
+- Bonus sends still consume one normal daily send and one of the receiver's 50 daily receive slots.
+- Added Trade Planner > Bonus Sets for live spare-to-need matches.
+
+BONUS SET SETTINGS
+Potion Lab now contains a Timed Bonus Sets editor for all three sets:
+- Set title
+- Unlock/trade start date and time
+- Trade window end date and time
+- Nine sticker titles per set
+- 1–6 star value for each sticker
+- Gold / Regular for each sticker
+- Sticker image URL / relative asset path
+- Local image upload; uploads are resized and stored in the browser as WebP data
+
+EVENT PLANNER NAVIGATION
+- Desktop and mobile layouts now explicitly hide the duplicate navigation entry for the other layout.
+- Only one Event Planner navigation entry is visible at a time.
+- Adventure Club remains fixed at five players.
+
+GUIDED TOUR
+The tutorial was expanded into a full-site walkthrough covering:
+- Accounts and CSV imports
+- Multi-account album
+- Unlimited duplicates + celebrations
+- Hover trade matching
+- Set screenshot sharing
+- Filters and set rail
+- Three timed Bonus Sets
+- Progress + Star Vault
+- Suggestions, Planned Sends, Smart Planner, Calendar, trade events, Bonus Set trading and trade posts
+- Community Chest, Racers, Partner Build and five-player Adventure Club
+- Tokens, favicons/PWA icons and Trick or Treat buckets
+- Catch-mode Trick or Treat, boosts and jump scares
+- Interactive ghosts, witches and spiders
+- Potion Lab, Slime Time, Bonus Set editing, audio wake-up, PWA install and backups
+
+PWA
+- Cache version: monster-mash-v12-bonus-catch-tour

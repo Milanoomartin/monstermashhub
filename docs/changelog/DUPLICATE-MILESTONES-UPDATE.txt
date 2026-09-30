@@ -1,0 +1,9 @@
+Monster Mash Trade Hub — Duplicate Count & Milestones Update
+
+- Duplicate badges now always show the full number. Example: +137 stays +137 instead of 99+.
+- Removed the old 99-spare inline-entry limit.
+- Removed the old 999-copy storage cap. There is no app-level duplicate-count cap.
+- Duplicate milestone celebrations now trigger when crossing: 10, 25, 50, 100, 250, 500, 1,000, 2,500, 5,000, 10,000 and the same 1/2.5/5 pattern at higher powers of ten.
+- Higher milestones use larger celebration overlays, particle rain, account identity and the sticker name.
+- Import jumps are condensed to the biggest milestone to avoid a flood of celebration screens.
+- PWA/service-worker cache bumped to v8-duplicate-milestones.

@@ -1,0 +1,39 @@
+Monster Mash Trade Hub — Album Hover + Set Sharing Update
+
+Sticker duplicate badge
+- Moved the +duplicate badge from the upper-right star area down to the right-middle/lower area of the sticker.
+- Added Potion Lab > Album & trading rules > Duplicate badge transparency.
+- Adjustable from 25% to 100%; default is 72%.
+
+Sticker hover card
+- Removed the browser's plain native sticker tooltip from album stickers.
+- Added a custom spooky hover card styled to the Monster Mash theme.
+- Star rarity is written as "1 Star", "2 Star", "3 Star", etc. instead of a row of star symbols.
+- Gold stickers add "Gold" to the rating.
+
+Optional trade-match hover helper
+- Potion Lab > Album & trading rules > Trade matches on sticker hover.
+- When enabled:
+  * hover an owned sticker with a spare to see accounts that still need it;
+  * hover a needed sticker to see accounts that have a spare;
+  * when nobody matches, the hover card says so clearly.
+- On touch/mobile, long-press a sticker to open the existing full cross-account spotlight view.
+
+Copy / save an album set
+- Every set header now has a Share set button.
+- Choose which account should be represented.
+- Generated PNG includes:
+  * account avatar and name;
+  * MOGO code;
+  * complete friend link when it fits across up to two lines;
+  * set number and set title;
+  * collected count and vault stars;
+  * all 9 sticker images;
+  * Owned / Needed status;
+  * spare count;
+  * star rating and Gold status.
+- Copy image uses the existing Firefox/Safari-compatible clipboard fallback.
+- Save PNG works through the existing save/download compatibility layer.
+
+PWA cache
+- Service worker cache bumped to monster-mash-v6-share-hover so installed/mobile versions replace the older cached build.

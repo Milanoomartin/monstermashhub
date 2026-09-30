@@ -1,0 +1,49 @@
+Monster Mash Trade Hub — Trick or Treat + Event Roster Update
+Build: v11-trick-or-treat
+
+EVENT PLANNER
+- Fixed the duplicate Event Planner navigation entry. There is now one desktop Event Planner button and one mobile More-menu entry.
+- Event planners can select existing Trade Hub accounts from dropdowns or use Manual / not in account list for outside players.
+- Tracked accounts cannot be assigned twice inside the same event plan.
+- Current participant caps are enforced by the planner layout:
+  • Community Chest: 3 chest partners
+  • Racers: 4 racers total, including the planning account
+  • Partner Build: 4 partner slots / attractions
+  • Adventure Club: 5 players total, including the planning account
+- Racers and Adventure Club reserve Player 1 for the planning player when one is selected or manually entered.
+- Existing saved event data is normalized so account-link fields are added without wiping progress.
+
+CLICKABLE HAUNTED DECOR
+- Click the roaming ghost to summon a full Ghost Parade.
+- Click the flying witch to summon a seven-witch Witch Parade with lightning and audio.
+- Click a roaming spider to burst a spider swarm across the screen; cobwebs follow shortly afterward.
+
+TRICK OR TREAT MODE
+- Added a persistent mystery Trick or Treat bucket in the top-right corner of every page.
+- Click the mystery bucket to start or stop Trick or Treat mode.
+- On desktop/fine-pointer devices the selected bucket becomes the cursor follower while the hunt is active.
+- Candy travels across the viewport and can be clicked/tapped.
+- Caught treats animate into the top-corner bucket and increase Treat count, streak and best streak.
+- A randomized share of candy is secretly a Trick. Catching one triggers a full-screen jump scare, lightning and a synthesized scream/shrieking sound.
+- Trick/Treat totals, streaks and unlocked buckets persist with the rest of the Trade Hub data.
+
+BUCKET COLLECTION
+- Collection now has a dedicated Trick or Treat Buckets tab.
+- 10 themed starter buckets are available immediately.
+- 10 special buckets unlock through Treat milestones and can be equipped as the Trick or Treat cursor bucket.
+- Special bucket unlock thresholds: 10, 25, 50, 75, 100, 150, 225, 325, 500 and 750 Treats.
+- Unlocks get a dedicated celebration overlay and candy burst.
+
+ASSETS FROM THE USER'S SHARED CREATIONS
+- 10 regular bucket images
+- 10 special unlockable bucket images
+- 40 full-screen jump-scare images across the four supplied jump-scare creations
+- Images were converted to WebP for the site while retaining transparency where present.
+
+PWA / OFFLINE
+- Service worker cache bumped to monster-mash-v11-trick-or-treat.
+- All 20 bucket images and all 40 jump-scare images are precached along with the existing app shell and six-frame slime effect.
+
+NOTES
+- Jump scares use a short full-screen flash/zoom treatment rather than rapid repeated strobing.
+- The scream is generated with the site's Web Audio engine, so it follows the existing Sound Effects setting and browser audio-permission behavior.

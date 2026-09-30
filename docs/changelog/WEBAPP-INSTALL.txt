@@ -1,0 +1,13 @@
+MONSTER MASH TRADE HUB — MOBILE WEB APP
+
+The folder is already PWA-ready. No build step is required.
+
+1. Upload the entire folder to the same HTTPS website location, preserving the assets/ and samples/ folders.
+2. Open index.html through that HTTPS address on the phone.
+3. Use the in-site “Install app” button, or the browser’s Install app / Add to Home Screen option.
+4. After the service worker installs, visited local assets are cached for offline use.
+
+Notes
+- Direct image clipboard access is browser-security controlled and works best from HTTPS after a user taps Copy Image.
+- If a browser blocks image clipboard access, the site tries a compatibility fallback and Save Image remains available.
+- Standard app launcher/touch icons are PNG by design; sticker/token/favicon/UI artwork remains WebP.

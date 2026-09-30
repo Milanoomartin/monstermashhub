@@ -1,0 +1,6 @@
+format,version,player_id,name,friend_link,friendship_code,note,device,ownership,friends_member,stickerbank_member,category,avatar
+monster-mash/sample-accounts,2,SAMPLE-FRANKIE-01,Enter Frankie,https://friend.example.invalid/mm/frankie-Q7K4P2,MOGO-FRANKIE-Q7K4P2,Demo profile — not a real account,Sample Phone,own,false,true,demo,f03
+monster-mash/sample-accounts,2,SAMPLE-DRAC-02,Disco Drac,https://friend.example.invalid/mm/disco-drac-M3V8R5,MOGO-DRAC-M3V8R5,Demo profile — not a real account,Sample Tablet,own,false,true,demo,f01
+monster-mash/sample-accounts,2,SAMPLE-HEXIE-03,Hexie,https://friend.example.invalid/mm/hexie-N6T2W9,MOGO-HEXIE-N6T2W9,Demo profile — not a real account,Sample Phone,own,false,true,demo,f47
+monster-mash/sample-accounts,2,SAMPLE-RAGS-04,Enter Rags,https://friend.example.invalid/mm/rags-B4J9C7,MOGO-RAGS-B4J9C7,Demo profile — not a real account,Sample Phone,own,false,true,demo,f06
+monster-mash/sample-accounts,2,SAMPLE-SWAMPIE-05,Swampie,https://friend.example.invalid/mm/swampie-K8H5D3,MOGO-SWAMP-K8H5D3,Demo profile — not a real account,Sample Tablet,own,false,true,demo,f37

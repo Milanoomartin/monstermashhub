@@ -1,0 +1,11 @@
+Monster Mash Trade Hub update
+
+Changes in this build:
+- Removed the visible Games tab and redirected any saved Games page back to Album.
+- Upgraded Trick or Treat into a bucket-catch survival mode.
+- Ghosts, witches, spiders, and bats now chase candy; if they reach your bucket they steal treats.
+- Tapping/clicking those creatures spins them off the screen.
+- Helper buckets unlock at 50, 225, and 500 treats as mirrored catch zones.
+- Multi-touch support lets touch users control multiple catch points at once.
+- Candy Vortex, Double Treats, and Moon Freeze remain active boosts.
+- Tutorial updated to cover the current feature set and remove Arcade references.

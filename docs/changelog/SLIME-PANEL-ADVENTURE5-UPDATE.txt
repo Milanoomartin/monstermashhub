@@ -1,0 +1,23 @@
+Monster Mash Trade Hub — Slime Panel + Adventure Club 5-Player Update
+September 22, 2026
+
+SLIME TIME
+- Replaced the generated CSS splat system with the exact six-frame slime artwork sequence from the Monster Mash project.
+- Frames animate from a small top-edge ooze to a full-screen slime coating.
+- The slime is drawn to a fixed viewport canvas, so it stays across the visible screen while the page itself scrolls.
+- Mouse, pen, and touch gestures erase the slime directly from the canvas.
+- Wiped areas remain transparent if the viewport resizes or rotates.
+- Mobile keeps vertical pan/scroll behavior while horizontal/diagonal gestures can wipe slime.
+- After enough wiping, the remaining slime dissolves away. Slime Time can be summoned again by toggling the secret theme.
+- All six slime frames are pre-cached for PWA/offline use.
+
+ADVENTURE CLUB
+- Corrected Adventure Club to the current 5-player format: the user plus four teammates.
+- Default roster reduced from 8 slots to 5.
+- Team-size field is fixed at 5 instead of allowing obsolete larger team counts.
+- Existing saved Adventure Club data is migrated to the 5-player format while preserving the first five roster entries.
+- Removed the old 8-player wording from the live planner.
+
+PWA
+- Service-worker cache bumped to v10-slime-panel-adventure5.
+- Six slime frames are included in the app shell so Slime Time can still animate after the assets have been cached.

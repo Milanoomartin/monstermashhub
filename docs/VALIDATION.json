@@ -1,0 +1,42 @@
+{
+  "build": "v14-event-perspectives",
+  "allChecksPassed": true,
+  "checks": {
+    "communityPerspectiveViews": true,
+    "partnerPerspectiveViews": true,
+    "reciprocalPartnerCapacityCheck": true,
+    "sharedRacersPerspective": true,
+    "sharedAdventurePerspective": true,
+    "communityLocalColors": true,
+    "communitySpecificTasks": true,
+    "accountAvatarOverlays": true,
+    "animatedKeys": true,
+    "animatedRacerFlag": true,
+    "spiderSwarmExpanded": true,
+    "webSplats": true,
+    "tourCoversPerspectives": true,
+    "gamesRemainHidden": true,
+    "serviceWorkerVersionUpdated": true
+  },
+  "assetCounts": {
+    "standardStickerImages": 198,
+    "favicons": 53,
+    "tokens": 49,
+    "eventPlannerArtwork": 19
+  },
+  "missingEventArtwork": [],
+  "missingServiceWorkerCachePaths": [],
+  "perspectiveRules": {
+    "communityChest": "3 partner slots per account perspective; tracked pairings mirror reciprocally; each perspective keeps its own Yellow/Green/Pink placement and task wording",
+    "partnerBuild": "4 partner slots per account perspective; tracked pairings mirror reciprocally; reciprocal over-cap pairings are blocked; contributions mirror across paired perspectives",
+    "racers": "one shared 4-player team; perspective changes the viewer, not the roster",
+    "adventureClub": "one shared 5-player team; perspective changes the viewer, not the roster"
+  },
+  "visualUpgrades": {
+    "racerFlags": "8 supplied transparent flag-angle frames cycle to create a spinning flag",
+    "communityKeys": "gold, green, and pink front/back key art rotate in 3D",
+    "communityAccountArt": "selected account avatars and names overlay themed Community Chest artwork and progress bars",
+    "racerAccountArt": "selected team avatars and names overlay the haunted Racer artwork",
+    "spiderClear": "32-spider burst plus 9 temporary web splats followed by the existing cobweb takeover"
+  }
+}

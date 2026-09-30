@@ -1,0 +1,183 @@
+MONSTER MASH ARCADE — GAME CATALOG
+
+72 playable games · 18 mechanics · five intensity levels
+
+FLAPPY
+  • Flappy Frankie — Chill — Flight
+    Guide Frankie through crooked mansion gates without clipping the haunted masonry.
+  • Disco Drac Night Flight — Easy — Flight
+    Keep Disco Drac airborne through a moonlit corridor of shifting crypt towers.
+  • Skyblade Moon Glide — Medium — Flight
+    Thread a Skyblade through neon demon portals as the gaps tighten.
+  • Ghostly Guide Gale — Nightmare — Flight
+    Survive a violent spectral wind tunnel where the safe openings move fast.
+
+PLINKO
+  • Phantom Prize Drop — Chill — MOGO-inspired
+    A haunted Plinko-style drop: choose a lane, bounce through spirit pegs and chase the center jackpot.
+  • Slimeball Prize Drop — Easy — MOGO-inspired
+    Drop glowing slime chips through a shifting peg field for gooey point zones.
+  • Demon Queen Drop Zone — Medium — MOGO-inspired
+    Riskier bumpers and narrower jackpots turn every chip into a dramatic descent.
+  • Sticker Pack Plinko — Nightmare — MOGO-inspired
+    A nightmare Prize Drop remix with fast bumpers, tiny jackpots and huge combo scores.
+
+DIG
+  • Crypt Digger — Chill — MOGO-inspired
+    Spend picks uncovering sticker relics hidden beneath a small graveyard grid.
+  • Mummy's Buried Booty — Easy — MOGO-inspired
+    Search wrapped tomb chambers for hidden album treasures before your picks run out.
+  • Grim Garden Treasures — Medium — MOGO-inspired
+    Excavate cursed flowerbeds where treasure clusters reward smart digging patterns.
+  • Demon Vault Excavation — Nightmare — MOGO-inspired
+    A tight-pick treasure hunt where every wasted tile can cost the final relic.
+
+RACE
+  • Transylvania Turbo Racers — Chill — MOGO-inspired
+    Tap to build speed around a haunted oval inspired by Racers laps and boosts.
+  • Ecto-1 Graveyard Rally — Easy — MOGO-inspired
+    Push Ecto-1 through a foggy cemetery race while spectral rivals close in.
+  • Skyblade Neon Circuit — Hard — MOGO-inspired
+    Time your boosts to outrun demon racers on a glowing midnight track.
+  • Wolfie's Moonlit Motorway — Nightmare — MOGO-inspired
+    A frantic championship sprint with aggressive rivals and almost no room for missed boosts.
+
+STACK
+  • Haunted Partner Build — Chill — MOGO-inspired
+    Drop floors cleanly to build a shared haunted attraction one milestone at a time.
+  • Frankie Landmark Lab — Easy — MOGO-inspired
+    Stack unstable lab floors; every sloppy placement shrinks your next platform.
+  • Witch's Cauldron Construction — Hard — MOGO-inspired
+    Build a crooked potion tower while each new level moves faster than the last.
+  • Mansion Builder Bash — Nightmare — MOGO-inspired
+    A razor-thin landmark stack challenge where one bad drop can doom the mansion.
+
+JUGGLE
+  • Peg-E's Phantom Juggle — Chill — MOGO-inspired
+    Tap falling spirits back into the air and keep the haunted goodies juggling.
+  • Hexie's Potion Juggle — Easy — MOGO-inspired
+    Keep potion orbs aloft as extra ingredients join the chaos.
+  • Ghostly Goodies Juggle — Medium — MOGO-inspired
+    A faster multi-object juggle with ghosts, candy and sticker packs sharing the air.
+  • Pumpkin Panic Juggle — Nightmare — MOGO-inspired
+    A full-coven juggling storm where one missed pumpkin can start a collapse.
+
+RUNNER
+  • Wolfie's Bone Run — Chill — Arcade
+    Leap fences, scoop sticker bones and keep Wolfie running through the moonlight.
+  • Rags' Tomb Dash — Easy — Arcade
+    Jump cracked sarcophagi and collect relics as the tomb scrolls faster.
+  • Swampie's Bog Bounce — Hard — Arcade
+    Bound over bog hazards and slime pools while chasing shiny album pickups.
+  • Railroad Rampage — Nightmare — Arcade
+    An intense endless run through haunted rail crossings, barriers and ghost trains.
+
+WHACK
+  • Ghost Trap Panic — Chill — Reflex
+    Tap the real ghosts before they vanish, but leave innocent pumpkins alone.
+  • Spider Queen Web Smash — Easy — Reflex
+    Smack web-crawlers as they pop from nine crypt holes; avoid the friendly slime.
+  • Demon Hunter Target Practice — Medium — Reflex
+    Fast demon targets, tiny windows and decoys test your hunter reflexes.
+  • Shutdown Specter Strike — Nightmare — Reflex
+    A brutal haunted shutdown gallery where targets flash for only a heartbeat.
+
+SNAKE
+  • Slime Snake — Chill — Arcade
+    Guide a glowing slime trail around the crypt while eating sticker sparks.
+  • Candy Coil Catacombs — Easy — Arcade
+    Grow a candy serpent through tight catacombs without biting your own trail.
+  • Ecto-1 Neon Trail — Medium — Arcade
+    Steer a neon ecto trail through a shrinking grid packed with supernatural pickups.
+  • Mummy Wraparound — Nightmare — Arcade
+    An ultra-fast wrapped serpent where every collected relic makes escape harder.
+
+BREAKOUT
+  • Sticker Breakout: Mansion Walls — Chill — Arcade
+    Bounce the moon orb through a wall made from Monster Mash sticker bricks.
+  • Gold Rim Gravebreak — Easy — Arcade
+    Crack gold-rimmed crypt bricks with a faster ball and narrower paddle.
+  • Demon World Barrier Break — Hard — Arcade
+    Shatter a dense demon barrier while keeping the cursed orb alive.
+  • Vault Smash After Dark — Nightmare — Arcade
+    A tiny paddle, hard bricks and rapid rebounds make this the nastiest breakout board.
+
+MEMORY
+  • Memory of the Mansion — Chill — Puzzle
+    Match pairs of Monster Mash faces hidden behind mansion doors.
+  • Monster Match Masquerade — Easy — Puzzle
+    Remember a larger cast as masks flip back faster between guesses.
+  • Bucket & Boos Pair-Up — Medium — Puzzle
+    Pair buckets, ghosts and album characters in a spooky concentration board.
+  • Sticker Pack Séance — Nightmare — Puzzle
+    A timed memory séance with a crowded board and almost no time to hesitate.
+
+CATCH
+  • Bucket Blitz — Chill — Catch
+    Slide a Trick or Treat bucket under falling candy and sticker treats.
+  • Trick-or-Treat Tornado — Easy — Catch
+    Catch treats spinning out of a candy storm while dodging rotten tricks.
+  • Sticker Rain Rescue — Hard — Catch
+    Save falling sticker art before it hits the graveyard floor.
+  • Cash Grab Candy Storm — Nightmare — Catch
+    A screen-filling catch frenzy inspired by fast bonus events and candy chaos.
+
+MAZE
+  • Mausoleum Maze — Chill — Puzzle
+    Guide your chosen character through a compact crypt maze to the glowing exit.
+  • Witching Woods Labyrinth — Easy — Puzzle
+    Navigate twisting hedges, gather runes and escape before the moon timer expires.
+  • Skyblade Escape Grid — Hard — Puzzle
+    Race a demon hunter through a larger neon maze with dead ends and pickups.
+  • Haunted Hotel Hallways — Nightmare — Puzzle
+    A sprawling high-speed maze with little time and a jump scare waiting for failure.
+
+RHYTHM
+  • Rhythm of the Dead — Chill — Rhythm
+    Tap four lanes as ghost notes cross the moonlit beat line.
+  • K-Pop Demon Beatdown — Easy — Rhythm
+    Hit a faster four-lane pattern powered by the Demon Hunters crew.
+  • Disco Drac Dancefloor — Hard — Rhythm
+    Keep the combo alive through a sparkling vampire dance break.
+  • Boogie Bash After Midnight — Nightmare — Rhythm
+    A relentless late-night note storm built for maximum Monster Mash chaos.
+
+REACTION
+  • Creepy Cameo Reaction — Chill — Reflex
+    Tap the highlighted portrait before the spectral spotlight jumps away.
+  • Quick Wins Crypt Tasks — Easy — Reflex
+    Complete rapid mini-prompts in a spooky take on bite-sized daily tasks.
+  • Lucky Chance Séance — Medium — Reflex
+    React to lucky symbols and avoid cursed cards as the timer accelerates.
+  • Fridge Raider Reflex — Nightmare — Reflex
+    A merciless reaction gauntlet with tiny response windows and trick decoys.
+
+POP
+  • Bubble Bath Buddies Pop — Chill — Chaos
+    Pop floating bubbles to free tiny Monster Mash characters and build a combo.
+  • Goo Crew Chain Reaction — Easy — Chaos
+    Burst connected slime orbs and let nearby goo explode in satisfying chains.
+  • Pumpkin Panic Pop — Hard — Chaos
+    Pop pumpkins quickly, but leave the skull bombs untouched.
+  • Sticker Boom Burst — Nightmare — Chaos
+    A manic screen of sticker bubbles, chain blasts and cursed bomb surprises.
+
+WHEEL
+  • Wheel Boost Séance — Chill — MOGO-inspired
+    Spin a haunted reward wheel and tap again to stop it on the richest spirit sector.
+  • Haunted Wheel of Fate — Easy — MOGO-inspired
+    Time your stop as narrow high-value wedges race beneath the pointer.
+  • Orb of Misfortune — Medium — MOGO-inspired
+    A volatile crystal wheel mixes jackpot wedges with cursed score drains.
+  • Trick-or-Treat Spin — Nightmare — MOGO-inspired
+    A blazing fast candy wheel where perfect timing is the only safe path.
+
+CARDS
+  • Adventure Club: Cursed Cards — Chill — MOGO-inspired
+    Draw number cards toward a target without overshooting, inspired by Adventure Club actions.
+  • Demon Hunter Draw — Easy — MOGO-inspired
+    Build a card total against rising demon difficulty across eight encounters.
+  • Community Chest Key Cards — Hard — MOGO-inspired
+    Hit exact card totals to forge keys and unlock progressively harder chests.
+  • Cryptic Card Gauntlet — Nightmare — MOGO-inspired
+    A punishing run of high targets where every extra card risks a cursed bust.

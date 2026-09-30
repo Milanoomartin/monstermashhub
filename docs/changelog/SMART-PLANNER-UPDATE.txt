@@ -1,0 +1,35 @@
+Monster Mash Trade Hub — Smart Planner Capacity Update
+
+What changed
+- Smart Planner now reserves each sending account's daily capacity separately.
+- Existing unfinished trade plans on dates inside the new Smart Planner window are counted before new trades are generated.
+- Existing planned sends also update the Smart Planner's simulated inventories when the sender still has the spare, preventing the same spare or the same missing sticker from being allocated twice.
+- Actual send history for a date is counted together with unfinished plans on that date.
+- The fixed Monopoly GO receive limit is enforced at 50 incoming stickers per account per day.
+- The 50/day receive cap is checked by Smart Planner, manual planning, and actual sends.
+- Smart Planner will not add new incoming trades after an account's actual + already-planned receives reach 50 for that date.
+- Manual planned trades now reject additions that would exceed configured send capacity or the 50/day receive cap.
+
+Grouped sending order
+- Smart Planner output is grouped by sending account.
+- New Smart Planner trades are ordered by the account order already used in the Trade Hub.
+- The Planned tab is sorted by date, then by sending account, so a day's sends stay together:
+  Account A, Account A, Account A, Account A, Account B, Account B, Account B...
+  rather than alternating A/B/A/B.
+- Calendar day details use the same sender-grouped ordering.
+
+Daily limits
+- Regular sends/day: configurable in Trade Planner > Events.
+- Trade Fest sends/day: configurable.
+- Gold sends during Golden Blitz: configurable.
+- Receives/day: fixed at 50 and always enforced.
+
+Overlapping Smart Planner runs
+Example:
+- Account A already has 4 regular sends planned for Monday and its limit is 5.
+- A new Smart Planner run that includes Monday can schedule at most 1 additional regular send from Account A that day.
+- If Account B has 0 planned sends that Monday, Account B still has its own full daily capacity.
+- If Account C already has 50 actual/planned incoming stickers Monday, Smart Planner schedules no additional incoming stickers to Account C on Monday.
+
+PWA cache
+- Service worker cache bumped to monster-mash-v7-smart-capacity so installed versions can replace the previous build.

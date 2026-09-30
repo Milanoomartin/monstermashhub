@@ -1,0 +1,16 @@
+# OS / editor clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Python (tools/)
+__pycache__/
+*.pyc
+.venv/
+
+# Local builds / exports
+_site/
+*.zip
+backups/

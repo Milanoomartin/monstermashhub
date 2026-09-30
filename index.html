@@ -1566,6 +1566,7 @@ body.trick-or-treat .tot-helper-bucket.on{display:block}
     <button class="rail-btn" data-page="album"><svg><use href="#i-book"/></svg><span class="rail-label">Album</span></button>
     <button class="rail-btn" data-page="accounts"><svg><use href="#i-users"/></svg><span class="rail-label">Accounts</span></button>
     <button class="rail-btn" data-page="trades"><svg><use href="#i-swap"/></svg><span class="rail-label">Trade Planner</span><span class="badge" id="badge-trades" hidden></span></button>
+    <button class="rail-btn" data-page="community"><svg><use href="#i-trophy"/></svg><span class="rail-label">Community</span></button>
     <button class="rail-btn" data-page="events"><svg><use href="#i-calendar"/></svg><span class="rail-label">Event Planner</span></button>
     <button class="rail-btn" data-page="games"><svg><use href="#i-gamepad"/></svg><span class="rail-label">Games</span></button>
     <button class="rail-btn" data-page="vault"><svg><use href="#i-vault"/></svg><span class="rail-label">Star Vault</span></button>
@@ -1597,6 +1598,7 @@ body.trick-or-treat .tot-helper-bucket.on{display:block}
   <section class="page" id="page-accounts" data-page="accounts" hidden></section>
   <section class="page" id="page-trades" data-page="trades" hidden></section>
   <section class="page" id="page-social" data-page="social" hidden></section>
+  <section class="page" id="page-community" data-page="community" hidden></section>
   <section class="page" id="page-vault" data-page="vault" hidden></section>
   <section class="page" id="page-events" data-page="events" hidden></section>
   <section class="page" id="page-games" data-page="games" hidden></section>
@@ -1613,9 +1615,9 @@ body.trick-or-treat .tot-helper-bucket.on{display:block}
 
 <nav id="tabbar" aria-label="Pages">
   <button data-page="album"><svg><use href="#i-book"/></svg>Album</button>
-  <button data-page="accounts"><svg><use href="#i-users"/></svg>Accounts</button>
   <button data-page="trades"><svg><use href="#i-swap"/></svg>Trades</button>
   <button data-page="social"><svg><use href="#i-cloud"/></svg>Friends<span class="badge cl-badge" hidden></span></button>
+  <button data-page="community"><svg><use href="#i-trophy"/></svg>Community</button>
   <button id="tab-more"><svg><use href="#i-menu"/></svg>More</button>
 </nav>
 <button id="fab-sets" aria-label="Jump to a set"><svg><use href="#i-grid"/></svg></button>
@@ -1623,6 +1625,7 @@ body.trick-or-treat .tot-helper-bucket.on{display:block}
 <div class="sheet-wrap" id="sheet-more"><div class="scrim" data-close></div><div class="sheet" role="dialog" aria-label="More pages">
   <div class="grab"></div><h3>More</h3>
   <div class="sheet-grid">
+    <button class="rail-btn" data-page="accounts"><svg><use href="#i-users"/></svg><span class="rail-label">Accounts</span></button>
     <button class="rail-btn" data-page="vault"><svg><use href="#i-vault"/></svg><span class="rail-label">Star Vault</span></button>
     <button class="rail-btn" data-page="events"><svg><use href="#i-calendar"/></svg><span class="rail-label">Event Planner</span></button>
     <button class="rail-btn" data-page="games"><svg><use href="#i-gamepad"/></svg><span class="rail-label">Games</span></button>
@@ -6401,6 +6404,7 @@ build() {
   const evtab = (k) => { S.st.ui.eventTab = k; S.st.events.tab = k; };
   const coll = (k) => { S.st.ui.collTab = k; };
   const soc = (k, group = null) => { if (MM.Cloud && MM.Cloud.ui) { MM.Cloud.ui.tab = k; MM.Cloud.ui.group = group; } };
+  const com = (k) => { if (MM.Community) MM.Community.tab = k; };
   const wide = innerWidth > 820;
   return [
     { title:'Welcome to the full Monster Mash tour', body:'The tour swaps in a safe demo crew so you can explore everything without changing your real album, trade plans, events, friends, groups, Trick or Treat progress or settings.', tip:'Finish the tour or press Esc and your real data comes back exactly as it was.', page:'album' },
@@ -6411,15 +6415,20 @@ build() {
     { title:'Search, filters and bulk update', body:'Filter needs, spares, close sets, star levels and gold status. Bulk update helps when you open packs, and Undo protects recent changes.', page:'album', sel:'#album-tools' },
     { title:'Timed Bonus Sets stay separate', body:'The three Bonus Sets unlock only during their own time windows. They never change the 22-set / 198-sticker main album totals, prestige or completion.', page:'album', sel:'#bonus-sets' },
     { title:'Trade planning respects limits', body:'Suggestions, planned sends and Smart Planner all honor sender limits, Golden Blitz rules, Trade Fest settings and the 50-sticker daily receive cap.', page:'trades', sel:'#page-trades .strategy', before:()=>tab('smart') },
-    { title:'Friends & Groups: your mansion online', body:'Sign in to back up your whole album to the cloud and use it on your phone and computer. Your profile has a friend code (MM-…) and an invite link you can share anywhere.', tip:'This part of the tour shows sample friends and groups. Nothing here is real until you sign in.', page:'social', sel:'#page-social .cl-me', before:()=>soc('friends') },
-    { title:'Four ways to add a friend', body:'Type a @username or friend code MM-… to send a request. An account token MMA-… makes you friends instantly and shows just that one account. You can even type someone’s Monopoly GO friend code or link.', page:'social', sel:'#page-social .cl-grid2 .card', before:()=>soc('friends') },
-    { title:'Monopoly GO lookups stay private', body:'Dan found one of your accounts by its Monopoly GO code. Accepting shares only that account with him, and owners can switch "Findable by MOGO code" off for any account.', page:'social', sel:'#page-social .cl-list .cl-row', before:()=>soc('friends') },
-    { title:'You decide what each friend sees', body:'Every friend card shows what they share with you and what you share with them. Tap "change" to tick exactly which of your accounts that friend can view, and change it any time.', page:'social', sel:'#page-social .cl-person', before:()=>soc('friends') },
-    { title:'Trade requests keep both albums in step', body:'Friends’ shared albums appear read-only in your Album, Trade Planner and Smart Planner. Sending to a friend logs a trade for them to confirm; planning a send from a friend becomes a request. Sticker counts update when a trade is marked sent and received.', page:'social', sel:'#page-social .cl-trade', before:()=>soc('trades') },
-    { title:'Groups with invite tokens', body:'Create private groups for your trading crew. Admins make invite tokens (MMG-…) that can expire, be limited to a number of people, or be revoked. Public groups can be found and joined by anyone.', page:'social', sel:'#page-social .cl-invites', before:()=>soc('groups', 'tg1') },
-    { title:'The group "Looking for" board', body:'Post the stickers you need and any member can tap "I can help" to pick it up. Turn on "Plan with this group" to add every member’s shared album to your planner.', page:'social', sel:'#page-social .cl-trade.st-open', before:()=>soc('groups', 'tg1') },
-    { title:'Partner events together', body:'Pair up for Partner Build (4 partners per account) and Community Chest (3), or team up for Racers (4) and Adventure Club (5). Everyone updates their own progress toward the team goal.', page:'social', sel:'#page-social .cl-event', before:()=>soc('events') },
-    { title:'My albums: sharing and account tokens', body:'Choose which accounts go online (private or public), whether new friends see them automatically, and whether they can be found by Monopoly GO code. Each account has its own token; make a new one to stop the old one working.', page:'social', sel:'#page-social .cl-token', before:()=>soc('albums') },
+    { title:'Your account, on every device', body:'Everyone signs in with email first. Your album then saves to your account automatically and updates live on your other devices. Your profile has a photo or icon, a friend code (MM-…) and an invite link.', tip:'This part of the tour shows sample friends and groups. Nothing here is real.', page:'social', sel:'#page-social .cl-me', before:()=>soc('friends') },
+    { title:'Account menu and sign out', body:'Tap your picture (top-left on phones, bottom of the side menu on computers) for Profile & privacy settings, your friend code — and one-tap Sign out.', page:'social', sel: wide ? '#cl-account-rail' : '#cl-chip', before:()=>soc('friends') },
+    { title:'Four ways to add a friend', body:'Type a @username, a friend code MM-…, an account token MMA-… (shares just that one account) or someone’s Monopoly GO friend code or link. Every add is a request the other player approves.', tip:'In Approvals you can auto-approve people who use your account tokens, or everyone.', page:'social', sel:'#page-social .cl-grid2 .card', before:()=>soc('friends') },
+    { title:'Approve requests your way', body:'Dan asked through one of your accounts, so approving shares only that account. You choose exactly what each friend can see, and you can switch on auto-approval for friend requests and group invites.', page:'social', sel:'#page-social .cl-list .cl-row', before:()=>soc('friends') },
+    { title:'You decide what each friend sees', body:'Every friend card shows what they share with you and what you share with them. Tap "change" to tick exactly which of your accounts that friend can view — plus their Monopoly GO code or link if they chose to show it.', page:'social', sel:'#page-social .cl-person', before:()=>soc('friends') },
+    { title:'Every trade is approved first', body:'Friends’ shared albums appear read-only in your Album, Trade Planner and Smart Planner. Asking or offering creates a request; the other player approves, the sender sends in Monopoly GO and marks it sent, and the receiver confirms. Sticker counts update at each step.', page:'social', sel:'#page-social .cl-trade', before:()=>soc('trades') },
+    { title:'Groups with invite tokens', body:'Create private groups for your trading crew. Admins make invite tokens (MMG-…) that can expire, have a use limit or be revoked. People who use a token ask to join and an admin approves — or turn on auto-approve.', page:'social', sel:'#page-social .cl-invites', before:()=>soc('groups', 'tg1') },
+    { title:'The group "Looking for" board', body:'Post the stickers you need and any member can offer to help — you approve the offer. Turn on "Plan with this group" to add every member’s shared album to your planner.', page:'social', sel:'#page-social .cl-trade.st-open', before:()=>soc('groups', 'tg1') },
+    { title:'Team-ups are mutual', body:'Pair up for Partner Build (4 partners per account) and Community Chest (3), or team up for Racers (4) and Adventure Club (5). Invites need the invitee to accept, and asking to join needs the creator to approve.', page:'social', sel:'#page-social .cl-event', before:()=>soc('events') },
+    { title:'My albums: privacy per account', body:'For each account choose Off, Private or Public album, whether it is on the leaderboards, whether its Monopoly GO code and link are shown, and whether people can find it by code. Each account also has its own token.', page:'social', sel:'#page-social .cl-token', before:()=>soc('albums') },
+    { title:'Community feed', body:'Post tips, what you are looking for, spares you are offering or event call-outs — with sticker pictures attached. Staff can pin helpful posts.', page:'community', sel:'#page-community .cm-compose', before:()=>com('feed') },
+    { title:'Leaderboards are opt-in', body:'Rank by stickers, sets, stars, spares or prestige. Only albums whose owners joined the leaderboards appear, and private albums show totals only.', page:'community', sel:'#page-community .cm-board', before:()=>com('board') },
+    { title:'Public albums', body:'Open any album its owner made public to see all 22 sets, what they have, what they need and their spares — and add them as a friend in one tap.', page:'community', sel:'#page-community .cm-album-card', before:()=>com('albums') },
+    { title:'Staff roles and moderation', body:'The first account is the Admin. Admins create Moderators and custom roles with a unique name, colour, rules and a chosen set of permissions — like removing profile photos or editing and deleting posts.', page:'community', sel:'#page-community .cm-role', before:()=>com('staff') },
     { title:'Event Planner perspectives', body:'Community Chest and Partner Build keep a separate board for each tracked account. Switch the View event board as control to move between perspectives without duplicating the event itself.', page:'events', sel:'#page-events .ep-perspective', before:()=>evtab('community') },
       { title:'Community Chest perspective boards', body:'Each account gets three partner slots. Selecting a tracked partner automatically places the relationship on the other account’s perspective too, while each player can independently choose yellow, green or pink and record their specific task wording. Picked account avatars and names replace the blank portrait circles, and the themed keys spin in place.', page:'events', sel:'#page-events .community-visual', before:()=>evtab('community') },
       { title:'Racers is one shared four-person team', body:'Every racer sees the same team, so changing perspective never creates a separate roster. The haunted race board uses the selected account icons and names, while the Monster Mash flag cycles through its transparent angle frames to create a spinning flag effect.', page:'events', sel:'#page-events .racer-art-stage', before:()=>evtab('racers') },
@@ -6438,7 +6447,7 @@ build() {
     { title:'Combos, shortcuts and secrets', body:'Tap stickers quickly for x2…x10 combos with rising notes and confetti. The theme switch spreads from your finger. ' + (wide ? 'Keys 1–9 and 0 jump between pages, [ and ] step through them, / searches, T switches theme, M mutes, and ? lists them all.' : 'The More sheet can be swiped down to close.') + ' There is also a secret code — old-school gamers will know it.', page:'album', sel:'#marquee' },
     { title:'Potion Lab controls the mansion', body:'Toggle ambience, sound effects, haunted extras, Slime Time, cursor behavior, PWA options and Bonus Set scheduling from the Potion Lab.', page:'lab', sel:'#page-lab .lab-grid' },
     { title:'Backups keep everything portable', body:'Export a full backup when moving devices. It includes accounts, stickers, Bonus Sets, events, trades, Trick or Treat progress and settings.', page:'io', sel:'#page-io' },
-    { title:'That’s the whole haunted mansion', body:'You have seen the album, Bonus Sets, smart trading, friends, groups, trade requests, partner events, event planning, collections, Trick or Treat, Juice, sounds, PWA tools and backups. Finish to restore your real data.', page:'album', sel:'#tut-btn' },
+    { title:'That’s the whole haunted mansion', body:'You have seen the album, Bonus Sets, smart trading, your account, friends, groups, approvals, partner events, the community, event planning, collections, Trick or Treat, Juice, sounds, PWA tools and backups. Finish to restore your real data.', page:'album', sel:'#tut-btn' },
   ];
 },
   start() {
@@ -6479,7 +6488,7 @@ build() {
     this.clear();
     $('#tut-card').classList.remove('on'); $('#tut-ring').classList.remove('on');
     step.before && step.before();
-    if (step.page && (MM.page !== step.page || step.page === 'trades' || step.page === 'social')) MM.go(step.page, { quiet: true });
+    if (step.page && (MM.page !== step.page || step.page === 'trades' || step.page === 'social' || step.page === 'community')) MM.go(step.page, { quiet: true });
     await sleep(160);
     let t = null;
     if (step.sel) for (let k = 0; k < 20 && !t; k++) { t = $(step.sel); if (!t) await sleep(80); }
@@ -6539,7 +6548,7 @@ MM.Story = {
   steps: [
     { kick: 'Knock, knock…', title: 'Welcome to the Mansion', art: 'ui_header', text: 'Track every Monopoly GO account and trading friend side by side through the main Monster Mash album — 22 sets, 198 stickers, 30 gold — plus three independent timed Bonus Sets.', pills: ['Three accounts at a glance', 'CSV import & export', 'Works offline in your browser'] },
     { kick: 'Trick or trade', title: 'Spares find their way home', art: 'ui_vault_banner', text: 'Mark spares with a tap. Trade suggestions, set closers and a smart planner move them to whoever needs them — and the Star Vault shows what they’re worth.', pills: ['Golden Blitz & Trade Fest rules', 'Trade posts with sticker pictures', 'Undo for everything'] },
-    { kick: 'Better together', title: 'Friends, groups & cloud save', art: ['f20', 'f36', 'f04', 'f08', 'f17', 't13', 't05', 't10', 't07', 't30'], text: 'Sign in to keep your album on every device. Add friends by username, code, account token or Monopoly GO link, choose exactly which accounts each friend sees, and run trades and partner events in your own invite-only groups.', pills: ['Cloud save', 'Invite tokens', 'Trade requests', 'Partner events'] },
+    { kick: 'Better together', title: 'Friends, groups & cloud save', art: ['f20', 'f36', 'f04', 'f08', 'f17', 't13', 't05', 't10', 't07', 't30'], text: 'Your album saves to your account and follows you to every device. Add friends by username, code, account token or Monopoly GO link, choose exactly what each friend sees, run approved trades and partner events in your own groups, and join the community leaderboards if you like.', pills: ['Auto cloud save', 'Invite tokens', 'Approved trades', 'Community & leaderboards'] },
     { kick: 'Unlock the crypt', title: 'Collect the whole crew', art: 'tokens', text: 'Finish sets to unlock themed tokens and tab icons, then let them trail your cursor. Ghosts, bats and a certain witch roam the page, and Trick or Treat buckets unlock as your candy haul grows.', pills: ['49 tokens · 53 tab icons', 'Trick or Treat buckets', 'Mirrored helper buckets', 'Slime Time & secret themes'] },
   ],
   maybeShow() { if (S.st.settings.magic.story && !Store.get('mmx-story-seen', false) && !MM.Tut.active) setTimeout(() => this.show(), 900); },
@@ -6691,6 +6700,7 @@ MM.PWA.init();
    ===================================================================== */
 const PAGES = { album: MM.Album, accounts: MM.Accounts, trades: MM.Trade,
   social: { render: (a) => (MM.Social ? MM.Social.render(a) : ($('#page-social').innerHTML = '<div class="empty"><div class="big">Friends &amp; Groups</div>The cloud module did not load.</div>')) },
+  community: { render: (a) => (MM.Community ? MM.Community.render(a) : ($('#page-community').innerHTML = '<div class="empty"><div class="big">Community</div>The community module did not load.</div>')) },
   events: MM.Events, games: MM.Games, vault: MM.Vault, progress: MM.Progress, collection: MM.Collection, io: MM.IO, lab: MM.Lab };
 MM.page = null;
 
@@ -6917,6 +6927,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 <script src="assets/mm-juice.js"></script>
 <script src="assets/mm-cloud-config.js"></script>
 <script src="assets/mm-cloud.js"></script>
+<script src="assets/mm-community.js"></script>
 <script src="assets/mm-art-core.js" defer></script>
 <script src="assets/mm-stickers-a.js" defer></script>
 <script src="assets/mm-stickers-b.js" defer></script>

@@ -5,14 +5,10 @@
    Both are meant to be public: the database rules in supabase/schema.sql decide
    what each signed-in player can see. NEVER put the service_role / secret key here.
 
-   providers: extra sign-in buttons. Each one must be switched on in
-   Supabase → Authentication → Sign In / Providers (callback URL:
-   https://geqbkdfpheemoqlhihsj.supabase.co/auth/v1/callback).
-   Email + password and email sign-in links always work.
+   Players sign in with email + password (or a one-time email link).
 
    Leave url empty to run the app without cloud features (everything stays on this device). */
 window.MM_CLOUD = {
   url: 'https://geqbkdfpheemoqlhihsj.supabase.co',
   anonKey: 'sb_publishable_QEIa9p5lfwzb9upBR8kT4Q_bVWzfHdh',
-  providers: ['discord', 'facebook'],
 };

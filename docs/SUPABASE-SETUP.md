@@ -1,112 +1,95 @@
-# Connecting Friends & Groups (Supabase)
+# Connecting accounts, Friends & Groups and Community (Supabase)
 
-Friends & Groups needs a free Supabase project to store accounts, friends, groups, trades and events.
-The site itself stays on GitHub Pages. Until you finish these steps, the app works as before and
-everything stays on each person's device.
+The site stays on GitHub Pages. Accounts, cloud saves, friends, groups, trades, events,
+community posts, roles and profile photos live in a free Supabase project.
 
-Time needed: about 15 minutes.
-
----
-
-## 1. Create the project
-
-1. Go to **supabase.com**, sign up, and click **New project**.
-2. Pick any name (e.g. `monster-mash`), a region close to your players, and a database password.
-   Save the password somewhere safe. The app never needs it.
-3. Wait for the project to finish setting up (about a minute).
-
-## 2. Create the tables and security rules
-
-1. In the project, open **SQL Editor** → **New query**.
-2. Open `supabase/schema.sql` from this repository, copy **all** of it, paste it in, and click **Run**.
-3. You should see *Success. No rows returned*.
-
-> Running the file again later **deletes all Friends & Groups data** and starts fresh. Only re-run it
-> before real players are using the site, or when an update note tells you to.
-
-## 3. Tell Supabase where your site lives
-
-**Authentication → URL Configuration**
-
-- **Site URL:** your GitHub Pages address, e.g. `https://YOUR-NAME.github.io/monstermashhub/`
-- **Redirect URLs:** add the same address. For testing on your computer, also add `http://localhost:8000/`.
-
-Sign-in links, confirmation emails and password resets only send people back to these addresses.
-
-## 4. Choose how people sign in
-
-**Authentication → Sign In / Providers → Email** is on by default. Players can:
-
-- create an account with email + password,
-- or get a one-tap sign-in link by email.
-
-**Confirm email** (in the same place):
-
-- **On:** new players must click a link in an email before they can sign in. Supabase's built-in email
-  sender only allows a handful of emails per hour, which is fine for a small group but not for a big launch.
-  For more, connect your own email service under **Authentication → Emails → SMTP Settings**
-  (Resend, Brevo, Postmark and similar have free tiers).
-- **Off:** players can sign in right after creating an account. This is simplest for a friends-only site.
-
-**Optional: Google or Discord buttons.** Turn on the provider under **Sign In / Providers** (each page
-explains how to get its client ID and secret). Then list it in `assets/mm-cloud-config.js`, e.g.
-`providers: ['google', 'discord']`.
-
-## 5. Connect the app
-
-1. In Supabase open **Project Settings → API** (or the **Connect** button).
-2. Copy the **Project URL** and the **anon public** key (or the **publishable** key, `sb_publishable_…`).
-3. Open `assets/mm-cloud-config.js` and paste them in:
-
-   ```js
-   window.MM_CLOUD = {
-     url: 'https://abcdefghijklmnop.supabase.co',
-     anonKey: 'eyJhbGciOi…',
-     providers: [],
-   };
-   ```
-
-These two values are designed to be public. The rules from step 2 decide what each player can see.
-**Never** put the `service_role` / secret key in this file or anywhere in the repository.
-
-## 6. Publish
-
-In GitHub Desktop: write a summary like "Connect Supabase", click **Commit to main**, then **Push origin**.
-After the GitHub Actions deploy finishes (about a minute), open your site → **Friends** → **Create account**.
+Your project is already linked in `assets/mm-cloud-config.js`
+(`https://geqbkdfpheemoqlhihsj.supabase.co` with its publishable key).
 
 ---
 
-## How it works for players
+## 1. Create (or update) the database
+
+1. Supabase → **SQL Editor** → **New query**.
+2. Paste **all** of `supabase/schema.sql` and click **Run**. You should see *Success. No rows returned*.
+
+Running it creates every table, the security rules, the functions the app calls, and the public
+**avatars** storage bucket for profile photos (512 KB max, PNG/JPEG/WebP).
+
+> **Re-running `schema.sql` erases all accounts' cloud data** (cloud saves, friends, groups,
+> trades, events, posts, roles). Only re-run it when an update says so — like this one — and before
+> real players depend on it. Sign-in accounts themselves (Authentication → Users) are kept: the
+> schema gives each of them a fresh profile, and the earliest one becomes Admin. Their albums are
+> still on their devices and upload again when they sign in.
+
+## 2. The first account becomes Admin
+
+The earliest sign-in account becomes **Admin** when the schema runs. If there are none yet, the very
+first account created afterwards becomes Admin, so create your own account first (open the site →
+**Create account**).
+
+If someone else got there first, fix it in **SQL Editor**:
+
+```sql
+insert into public.user_roles (user_id, role_id)
+select p.id, r.id from public.profiles p, public.roles r
+where p.username = 'YOUR_USERNAME' and r.builtin = 'admin'
+on conflict do nothing;
+```
+
+Admins can then create **Moderators** and custom roles from **Community → Staff**.
+
+## 3. Sign-in is email only
+
+1. **Authentication → Sign In / Providers:** switch **Discord** and **Facebook** (and anything else) **off**.
+   Leave **Email** on. The app no longer shows social buttons either way.
+2. **Confirm email** (Email provider settings):
+   - **On:** new players click a link in an email before they can sign in. Supabase's built-in email
+     sender only allows a few emails per hour, which is fine for small groups. For more, connect your
+     own sender under **Authentication → Emails → SMTP Settings** (Resend, Brevo, Postmark… have free tiers).
+   - **Off:** players can sign in right after creating an account. Simplest for a friends-only site.
+3. **Authentication → URL Configuration**
+   - **Site URL:** `https://milanoomartin.github.io/monstermashhub/`
+   - **Redirect URLs:** add the same address (and `http://localhost:8000/` if you test locally).
+   Sign-in links, confirmation emails and password resets only return to these addresses.
+
+## 4. Publish
+
+GitHub Desktop → summary "Community & approvals" → **Commit to main** → **Push origin**.
+When the GitHub Actions deploy finishes, open the site and create your (Admin) account.
+
+---
+
+## What players get
 
 | | |
 |---|---|
-| **Cloud save** | After signing in, the whole album is backed up and follows you to other devices. If two devices both changed, you're asked which version to keep. |
-| **Friend code** `MM-XXXX-XXXX` | Your personal code. Someone who enters it sends you a friend request. |
-| **Account token** `MMA-XXXX-XXXX-XXXX` | One per game account. Whoever enters it becomes your friend straight away and can see **only that account**. Make a new token any time to stop the old one working. |
-| **Monopoly GO code or link** | Typing a friend code or link from the game finds the matching account (if its owner allows "Findable by MOGO code/link") and sends a request. Accepting shares just that account. |
-| **What each friend sees** | Every friend card has a **change** button to tick which of your accounts they can view. "New friends see it" pre-ticks an account for future friends. **Public** accounts are visible to every signed-in player. |
-| **Groups** | Private groups are joined with invite tokens `MMG-XXXX-XXXX-XXXX` that admins create, each with an optional expiry and use limit and revocable any time. Public groups can be found and joined by anyone. Each group has a "Looking for" board, its own events, and a member list with shared albums. Owners can make members admins. |
-| **Trades** | Friends' albums show up (read-only) in the Album, Trade Planner and Smart Planner. Sending to a friend logs a trade for them to confirm; planning a send from a friend becomes a request they can accept. Sticker counts update when a trade is marked sent / received. |
-| **Partner events** | Partner Build and Community Chest pairs (4 and 3 partners per account, as in the game), Racers teams of 4, Adventure Club teams of 5. Everyone updates their own progress. |
+| **Sign-in first** | The app opens on the sign-in screen. After creating an account, a short setup page asks for a photo or icon, username, approval settings, leaderboard opt-in, and per-album privacy. |
+| **Account menu** | Tap your picture (top-left on phones, bottom of the side menu on computers): Profile & privacy, friend code, and one-tap **Sign out**. |
+| **Auto-sync** | Every change saves to the account automatically; changes from another device appear live. If two devices changed at once, the player picks which to keep. |
+| **Friends** | Add by `@username`, friend code `MM-…`, account token `MMA-…`, or Monopoly GO code/link. Every add is a request; players can auto-approve token holders or everyone. They choose which accounts each friend sees. |
+| **Groups** | Private (invite tokens `MMG-…` with expiry / use limits / revoke) or public. Joining asks an admin unless the group auto-approves. Admins can invite friends; players can auto-accept group invites. |
+| **Trades** | Every trade is a request the other player approves; then the sender marks it sent and the receiver confirms. |
+| **Partner events** | Invites need the invitee to accept; asking to join an open group event needs the creator's approval. Game limits apply. |
+| **Community** | Feed (posts with sticker pictures), opt-in leaderboards, and public albums anyone signed in can open. Per album: public or not, on the leaderboard or not, Monopoly GO code shown or not, link shown or not. |
+| **Roles** | Admin (everything). Moderator (remove photos, edit/delete posts, fix names, pin). Custom roles: unique name, colour, a description of the role's rules, and any set of those permissions. Nobody can grant permissions they don't have; only Admins make Admins; the last Admin can't be removed. |
 
 ## Good to know
 
-- **Free plan limits:** plenty for a trading community (hundreds of players). Free projects **pause after
-  about a week with no activity**; open the Supabase dashboard and click *Restore* if that happens.
-- **Removing a player completely:** Supabase → **Authentication → Users** → delete the user. Their profile,
-  shared accounts, groups they own and trades are removed with them. Players can remove their own cloud
-  data from **Friends → My albums**.
-- **Moderation:** as the project owner you can see and edit everything under **Table Editor**.
-- **Backups:** the free plan has no automatic backups you can restore yourself. Players' albums are also
-  kept on their own devices, and **Import / Export → Full backup** still works.
+- **Free plan:** plenty for a trading community. Projects **pause after ~a week with no activity**;
+  open the dashboard and click *Restore*.
+- **Removing a player completely:** **Authentication → Users** → delete. Their profile, albums, posts,
+  groups they own and roles go with them.
+- **Moderation by hand:** everything is visible under **Table Editor**; photos under **Storage → avatars**.
+- Never put the **service_role / secret** key in the site.
 
-## Testing without a Supabase project
+## Testing without touching the live project
 
-For development on your computer (`python -m http.server 8000`, then open `http://localhost:8000`):
+Serve the folder locally (`python -m http.server 8000`) and open:
 
-- `tools/test-schema.html` runs `supabase/schema.sql` in a browser-based PostgreSQL and checks 118 security rules.
-- A local fake backend lets you try the whole Friends & Groups flow. In the browser console run
-  `localStorage.setItem('mmx-cloud-mock', '1'); location.reload()`, and any email + password signs up.
-  `MOCK.as('friend@example.test', 'select public.add_friend($1)', ['yourname'])` acts as a second player.
-  Turn it off with `localStorage.removeItem('mmx-cloud-mock')`. This only works on localhost; neither
-  tool is published to the live site.
+- `http://localhost:8000/tools/test-schema.html` runs `schema.sql` in a browser-based PostgreSQL and
+  checks **132** security rules (approvals, roles, moderation, storage, leaderboards, privacy…).
+- A local fake backend lets you click through everything: in the browser console run
+  `localStorage.setItem('mmx-cloud-mock', '1'); location.reload()` (localhost only), then any email +
+  password signs up. `MOCK.as('friend@example.test', "select public.add_friend('yourname')")` acts as a
+  second player. Turn it off with `localStorage.removeItem('mmx-cloud-mock')`.

@@ -1185,7 +1185,7 @@ body.tutorial #tut-pill { display: block; }
 .tut-theme button.on { border-color: var(--gold); }
 .tut-hl { position: relative; z-index: 1602 !important; }
 
-/* ---------- onboarding storybook ---------- */
+/* ---------- Monster Mash welcome screens ---------- */
 #story { position: fixed; inset: 0; z-index: 1650; display: none; place-items: center; padding: 16px; background: radial-gradient(circle at 50% 20%, rgba(179, 92, 255, .35), rgba(8, 3, 20, .94)); backdrop-filter: blur(6px); }
 #story.on { display: grid; animation: fade-in .4s; }
 .story-card { width: min(720px, 100%); max-height: 92vh; overflow: auto; border-radius: 28px; background: var(--panel); border: 2px solid var(--line-2); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); }
@@ -6333,7 +6333,7 @@ MM.Lab = {
         </div>
         ${MM.Bonus.settingsHtml()}
         <div class="card lab-card"><h3>${icon('i-crate')} Your data</h3><p>Stored in this browser (${kb} KB). Nothing is sent anywhere.</p>
-          ${sw('mg-story', m.story, 'Welcome story for first visits', 'The “Welcome to the Mansion” intro.')}
+          ${sw('mg-story', m.story, 'Monster Mash welcome for first visits', 'The “Welcome to the Mansion” intro screens.')}
           <div class="setting"><div class="s-main"><b>Replay the welcome</b><small>See the intro again.</small></div><button class="btn sm" id="lb-story">Replay</button></div>
           <div class="setting"><div class="s-main"><b>Install as a web app</b><small>Home-screen icon, standalone display and offline caching after first use.</small></div><button class="btn sm" id="lb-install">${icon('i-download', 'ico')}Install app</button></div>
           <div class="setting"><div class="s-main"><b>App icon</b><small>Choose from unlocked Monster Mash favicons: monsters, ghosts, slime crews, demon hunters, Skyblades and more. Starter icons are free; additional icons unlock with set completions.</small></div><button class="btn sm ghost" id="lb-pwaicon">${artImg(S.st.settings.pwaIcon || S.st.settings.favicon, 'class="ava sm" alt=""')}Choose app icon</button></div>
@@ -6370,7 +6370,7 @@ MM.Lab = {
 };
 
 /* =====================================================================
-   Tutorial Mode (demo data + coach marks) and the welcome storybook
+   Tutorial Mode (demo data + coach marks) and the Monster Mash welcome screens
    ===================================================================== */
 MM.Tut = {
   active: false, idx: 0, steps: [], snap: null, themeChosen: false, target: null,
@@ -6400,8 +6400,10 @@ build() {
   const tab = (k) => { S.st.ui.tradeTab = k; };
   const evtab = (k) => { S.st.ui.eventTab = k; S.st.events.tab = k; };
   const coll = (k) => { S.st.ui.collTab = k; };
+  const soc = (k, group = null) => { if (MM.Cloud && MM.Cloud.ui) { MM.Cloud.ui.tab = k; MM.Cloud.ui.group = group; } };
+  const wide = innerWidth > 820;
   return [
-    { title:'Welcome to the full Monster Mash tour', body:'The tour swaps in a safe demo crew so you can explore everything without changing your real album, trade plans, events, Trick or Treat progress or settings.', tip:'Finish the tour or press Esc and your real data comes back exactly as it was.', page:'album' },
+    { title:'Welcome to the full Monster Mash tour', body:'The tour swaps in a safe demo crew so you can explore everything without changing your real album, trade plans, events, friends, groups, Trick or Treat progress or settings.', tip:'Finish the tour or press Esc and your real data comes back exactly as it was.', page:'album' },
     { title:'Choose your haunted look', body:'Pick Midnight Mash or Harvest Moon. Secret themes such as Slime Time can still be activated later from Potion Lab.', page:'album', sel:'#theme-btn', themeChoice:true },
     { title:'Accounts power the whole mansion', body:'Add your own Monopoly GO profiles and trading friends, including player ID, MOGO code/friend link, avatar, notes and ownership.', page:'accounts', sel:'#ac-add' },
     { title:'Import instead of retyping', body:'Import account, friend and album CSVs or restore a full backup. The importer previews changes before you apply them.', page:'io', sel:'#io-drop' },
@@ -6409,6 +6411,15 @@ build() {
     { title:'Search, filters and bulk update', body:'Filter needs, spares, close sets, star levels and gold status. Bulk update helps when you open packs, and Undo protects recent changes.', page:'album', sel:'#album-tools' },
     { title:'Timed Bonus Sets stay separate', body:'The three Bonus Sets unlock only during their own time windows. They never change the 22-set / 198-sticker main album totals, prestige or completion.', page:'album', sel:'#bonus-sets' },
     { title:'Trade planning respects limits', body:'Suggestions, planned sends and Smart Planner all honor sender limits, Golden Blitz rules, Trade Fest settings and the 50-sticker daily receive cap.', page:'trades', sel:'#page-trades .strategy', before:()=>tab('smart') },
+    { title:'Friends & Groups: your mansion online', body:'Sign in to back up your whole album to the cloud and use it on your phone and computer. Your profile has a friend code (MM-…) and an invite link you can share anywhere.', tip:'This part of the tour shows sample friends and groups. Nothing here is real until you sign in.', page:'social', sel:'#page-social .cl-me', before:()=>soc('friends') },
+    { title:'Four ways to add a friend', body:'Type a @username or friend code MM-… to send a request. An account token MMA-… makes you friends instantly and shows just that one account. You can even type someone’s Monopoly GO friend code or link.', page:'social', sel:'#page-social .cl-grid2 .card', before:()=>soc('friends') },
+    { title:'Monopoly GO lookups stay private', body:'Dan found one of your accounts by its Monopoly GO code. Accepting shares only that account with him, and owners can switch "Findable by MOGO code" off for any account.', page:'social', sel:'#page-social .cl-list .cl-row', before:()=>soc('friends') },
+    { title:'You decide what each friend sees', body:'Every friend card shows what they share with you and what you share with them. Tap "change" to tick exactly which of your accounts that friend can view, and change it any time.', page:'social', sel:'#page-social .cl-person', before:()=>soc('friends') },
+    { title:'Trade requests keep both albums in step', body:'Friends’ shared albums appear read-only in your Album, Trade Planner and Smart Planner. Sending to a friend logs a trade for them to confirm; planning a send from a friend becomes a request. Sticker counts update when a trade is marked sent and received.', page:'social', sel:'#page-social .cl-trade', before:()=>soc('trades') },
+    { title:'Groups with invite tokens', body:'Create private groups for your trading crew. Admins make invite tokens (MMG-…) that can expire, be limited to a number of people, or be revoked. Public groups can be found and joined by anyone.', page:'social', sel:'#page-social .cl-invites', before:()=>soc('groups', 'tg1') },
+    { title:'The group "Looking for" board', body:'Post the stickers you need and any member can tap "I can help" to pick it up. Turn on "Plan with this group" to add every member’s shared album to your planner.', page:'social', sel:'#page-social .cl-trade.st-open', before:()=>soc('groups', 'tg1') },
+    { title:'Partner events together', body:'Pair up for Partner Build (4 partners per account) and Community Chest (3), or team up for Racers (4) and Adventure Club (5). Everyone updates their own progress toward the team goal.', page:'social', sel:'#page-social .cl-event', before:()=>soc('events') },
+    { title:'My albums: sharing and account tokens', body:'Choose which accounts go online (private or public), whether new friends see them automatically, and whether they can be found by Monopoly GO code. Each account has its own token; make a new one to stop the old one working.', page:'social', sel:'#page-social .cl-token', before:()=>soc('albums') },
     { title:'Event Planner perspectives', body:'Community Chest and Partner Build keep a separate board for each tracked account. Switch the View event board as control to move between perspectives without duplicating the event itself.', page:'events', sel:'#page-events .ep-perspective', before:()=>evtab('community') },
       { title:'Community Chest perspective boards', body:'Each account gets three partner slots. Selecting a tracked partner automatically places the relationship on the other account’s perspective too, while each player can independently choose yellow, green or pink and record their specific task wording. Picked account avatars and names replace the blank portrait circles, and the themed keys spin in place.', page:'events', sel:'#page-events .community-visual', before:()=>evtab('community') },
       { title:'Racers is one shared four-person team', body:'Every racer sees the same team, so changing perspective never creates a separate roster. The haunted race board uses the selected account icons and names, while the Monster Mash flag cycles through its transparent angle frames to create a spinning flag effect.', page:'events', sel:'#page-events .racer-art-stage', before:()=>evtab('racers') },
@@ -6423,9 +6434,11 @@ build() {
     { title:'Helper buckets unlock later', body:'At higher treat milestones, mirrored helper buckets unlock on other parts of the screen so you can catch double and triple treats faster.', page:'album', sel:'#tot-mystery' },
     { title:'Mobile players get a real advantage', body:'On touch devices, multiple touches can control multiple catch points at once, making the later helper-bucket levels much more playable on mobile.', page:'album', sel:'#tot-mystery' },
     { title:'Haunted creatures are interactive', body:'Outside the hunt, clicking a ghost triggers Ghost Parade, clicking the witch triggers a witch parade, and clicking a spider explodes into a full spider swarm with web splats across the screen before the cobweb takeover.', page:'album', sel:'#decor' },
+    { title:'Juice: animations, sounds and haptics', body:'Pages slide, buttons ripple and squish, fireflies drift, and completed sets fire confetti cannons. Juice MAX has everything, LITE is lighter on battery, OFF is just the tracker.', tip: wide ? 'Press J to switch the Juice level from anywhere.' : 'Find Juice and Haptics (phone vibration) in the More menu.', page:'album', sel: wide ? '#juice-btn' : '#tab-more' },
+    { title:'Combos, shortcuts and secrets', body:'Tap stickers quickly for x2…x10 combos with rising notes and confetti. The theme switch spreads from your finger. ' + (wide ? 'Keys 1–9 and 0 jump between pages, [ and ] step through them, / searches, T switches theme, M mutes, and ? lists them all.' : 'The More sheet can be swiped down to close.') + ' There is also a secret code — old-school gamers will know it.', page:'album', sel:'#marquee' },
     { title:'Potion Lab controls the mansion', body:'Toggle ambience, sound effects, haunted extras, Slime Time, cursor behavior, PWA options and Bonus Set scheduling from the Potion Lab.', page:'lab', sel:'#page-lab .lab-grid' },
     { title:'Backups keep everything portable', body:'Export a full backup when moving devices. It includes accounts, stickers, Bonus Sets, events, trades, Trick or Treat progress and settings.', page:'io', sel:'#page-io' },
-    { title:'That’s the whole haunted mansion', body:'You have seen the album, Bonus Sets, smart trading, event planning, collections, Trick or Treat, helper buckets, boosts, Slime Time, sounds, PWA tools and backups. Finish to restore your real data.', page:'album', sel:'#tut-btn' },
+    { title:'That’s the whole haunted mansion', body:'You have seen the album, Bonus Sets, smart trading, friends, groups, trade requests, partner events, event planning, collections, Trick or Treat, Juice, sounds, PWA tools and backups. Finish to restore your real data.', page:'album', sel:'#tut-btn' },
   ];
 },
   start() {
@@ -6466,7 +6479,7 @@ build() {
     this.clear();
     $('#tut-card').classList.remove('on'); $('#tut-ring').classList.remove('on');
     step.before && step.before();
-    if (step.page && (MM.page !== step.page || step.page === 'trades')) MM.go(step.page, { quiet: true });
+    if (step.page && (MM.page !== step.page || step.page === 'trades' || step.page === 'social')) MM.go(step.page, { quiet: true });
     await sleep(160);
     let t = null;
     if (step.sel) for (let k = 0; k < 20 && !t; k++) { t = $(step.sel); if (!t) await sleep(80); }
@@ -6520,12 +6533,13 @@ addEventListener('keydown', (e) => {
 addEventListener('resize', debounce(() => { if (MM.Tut.active) { MM.Tut.ring(MM.Tut.target); MM.Tut.card(MM.Tut.steps[MM.Tut.idx], MM.Tut.target); } }, 150));
 addEventListener('scroll', debounce(() => { if (MM.Tut.active && MM.Tut.target) MM.Tut.ring(MM.Tut.target); }, 60), { passive: true });
 
-/* ---------- welcome storybook ---------- */
+/* ---------- Monster Mash welcome screens ---------- */
 MM.Story = {
   idx: 0,
   steps: [
     { kick: 'Knock, knock…', title: 'Welcome to the Mansion', art: 'ui_header', text: 'Track every Monopoly GO account and trading friend side by side through the main Monster Mash album — 22 sets, 198 stickers, 30 gold — plus three independent timed Bonus Sets.', pills: ['Three accounts at a glance', 'CSV import & export', 'Works offline in your browser'] },
     { kick: 'Trick or trade', title: 'Spares find their way home', art: 'ui_vault_banner', text: 'Mark spares with a tap. Trade suggestions, set closers and a smart planner move them to whoever needs them — and the Star Vault shows what they’re worth.', pills: ['Golden Blitz & Trade Fest rules', 'Trade posts with sticker pictures', 'Undo for everything'] },
+    { kick: 'Better together', title: 'Friends, groups & cloud save', art: ['f20', 'f36', 'f04', 'f08', 'f17', 't13', 't05', 't10', 't07', 't30'], text: 'Sign in to keep your album on every device. Add friends by username, code, account token or Monopoly GO link, choose exactly which accounts each friend sees, and run trades and partner events in your own invite-only groups.', pills: ['Cloud save', 'Invite tokens', 'Trade requests', 'Partner events'] },
     { kick: 'Unlock the crypt', title: 'Collect the whole crew', art: 'tokens', text: 'Finish sets to unlock themed tokens and tab icons, then let them trail your cursor. Ghosts, bats and a certain witch roam the page, and Trick or Treat buckets unlock as your candy haul grows.', pills: ['49 tokens · 53 tab icons', 'Trick or Treat buckets', 'Mirrored helper buckets', 'Slime Time & secret themes'] },
   ],
   maybeShow() { if (S.st.settings.magic.story && !Store.get('mmx-story-seen', false) && !MM.Tut.active) setTimeout(() => this.show(), 900); },
@@ -6533,8 +6547,8 @@ MM.Story = {
   hide(seen) { $('#story').classList.remove('on'); if (seen) Store.set('mmx-story-seen', true); },
   render() {
     const st = this.steps[this.idx], el = $('#story'), last = this.idx === this.steps.length - 1;
-    const art = st.art === 'tokens'
-      ? `<div class="story-art" style="display:grid;grid-template-columns:repeat(5,1fr);align-items:center;padding:14px;background:radial-gradient(circle at 50% 40%,#3a1d6e,#0b0619)">${['t01', 't39', 't14', 't30', 't13', 't04', 't36', 't34', 't38', 't11'].map((k, n) => `<div style="animation:bob ${2.4 + (n % 4) * 0.3}s ease-in-out ${n * 0.12}s infinite">${artImg(k, 'alt="" style="width:100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,.5))"')}</div>`).join('')}</div>`
+    const art = st.art === 'tokens' || Array.isArray(st.art)
+      ? `<div class="story-art" style="display:grid;grid-template-columns:repeat(5,1fr);align-items:center;gap:6px;padding:14px;background:radial-gradient(circle at 50% 40%,#3a1d6e,#0b0619)">${(Array.isArray(st.art) ? st.art : ['t01', 't39', 't14', 't30', 't13', 't04', 't36', 't34', 't38', 't11']).map((k, n) => `<div style="animation:bob ${2.4 + (n % 4) * 0.3}s ease-in-out ${n * 0.12}s infinite">${artImg(k, 'alt="" style="width:100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,.5))"')}</div>`).join('')}</div>`
       : `<div class="story-art">${artImg(st.art, 'alt="" style="width:100%;height:100%;object-fit:contain;display:block"')}</div>`;
     el.innerHTML = `<div class="story-card">${art}<div class="story-body"><span class="story-kick">${esc(st.kick)}</span><div class="story-title">${esc(st.title)}</div><p class="story-text">${esc(st.text)}</p>
       <div class="story-pills">${st.pills.map((p) => `<span class="pill">${esc(p)}</span>`).join('')}</div>

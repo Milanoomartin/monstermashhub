@@ -10,6 +10,15 @@
 - **Partner events.** Partner Build and Community Chest pairs (4 / 3 partners per account, enforced), Racers teams of 4, Adventure Club teams of 5, with invites, open group events, team goals and per-member progress.
 - **Live updates & notifications.** Supabase Realtime refreshes the page. New friend requests, trade steps and invites show a toast, a sound, a haptic buzz and a badge.
 
+## Tutorial & welcome
+- Tutorial Mode gains 11 steps: cloud save & friend code, the four ways to add a friend, Monopoly GO lookups, per-friend access, trade requests, groups & invite tokens, the "Looking for" board, partner events, sharing & account tokens, Juice levels, and combos/shortcuts.
+- During the tutorial the Friends page shows sample friends, groups, trades and events that can be browsed but not changed, so real cloud data is never touched.
+- The Monster Mash welcome screens gain a "Friends, groups & cloud save" slide.
+
+## Connected project
+- `assets/mm-cloud-config.js` points at the live Supabase project, with Discord and Facebook sign-in.
+- Social sign-in buttons only appear for providers that are switched on in Supabase.
+
 ## Files
 - `assets/mm-cloud.js`, `assets/mm-cloud.css`, `assets/mm-cloud-config.js` (project URL + public key go here).
 - `supabase/schema.sql`: tables, Row Level Security and actions. Setup guide in `docs/SUPABASE-SETUP.md`.

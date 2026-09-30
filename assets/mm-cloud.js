@@ -177,6 +177,9 @@
       else if (!(window.supabase && window.supabase.createClient)) await loadScript(SDK_URL);
       if (window.MM_MOCK_READY) await window.MM_MOCK_READY;
     } catch (e) { C.setStatus('error', 'Could not load the cloud library'); return; }
+    // which social sign-ins are actually switched on (so the app never shows a button that fails)
+    if (!cfg.mock && cfg.url) fetch(cfg.url.replace(/\/$/, '') + '/auth/v1/settings', { headers: { apikey: cfg.anonKey } })
+      .then((r) => (r.ok ? r.json() : null)).then((j) => { if (j && j.external) C.providersOn = new Set(Object.keys(j.external).filter((k) => j.external[k])); }).catch(() => {});
     C.sb = window.supabase.createClient(cfg.url || 'http://mock', cfg.anonKey || 'mock', { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
     // run auth work outside the callback: supabase-js must not be awaited inside it
     C.sb.auth.onAuthStateChange((event, session) => setTimeout(() => C.onAuth(event, session), 0));
@@ -606,17 +609,96 @@
   const stats = (counts) => { const c = counts || []; let have = 0, spare = 0, sets = 0; for (let i = 0; i < MM.N; i++) { if (c[i] > 0) have++; spare += Math.max(0, (c[i] || 0) - 1); } for (let s = 1; s <= 22; s++) { let n = 0; for (let k = (s - 1) * 9; k < s * 9; k++) if (c[k] > 0) n++; if (n === 9) sets++; } return { have, spare, sets }; };
   const acctLine = (r, extra = '') => { const s = stats(r.counts); return `<div class="cl-acct">${img(r.avatar, 'class="ava sm"')}<div><b>${esc(r.name)}</b><small>${s.have}/${MM.N} · ${s.sets}/22 sets · ${s.spare} spares</small></div>${extra}</div>`; };
 
+  /* ---------------------------------------------------------------- tutorial preview (sample friends & groups) */
+  const TOUR_KEYS = ['user', 'profile', 'status', 'sync', 'prefs', 'friendships', 'friendIds', 'people', 'myShares', 'keys', 'grants', 'remoteRows', 'rowsById',
+    'groups', 'myRoles', 'groupMembers', 'groupAccounts', 'invites', 'trades', 'partnerships', 'pmembers'];
+  const inTour = () => !!(MM.Tut && MM.Tut.active);
+  function tourData() {
+    const ME = 'tour-me', BOB = 'tour-bob', CARA = 'tour-cara', DAN = 'tour-dan', now = Date.now(), iso = (ms) => new Date(now + ms).toISOString();
+    const own = localAccounts().filter((a) => a.owner === 'own').slice(0, 3);
+    const easy = MM.ALL.filter((s) => !s.gold).map((s) => s.i);
+    const pattern = (a, b) => Array.from({ length: MM.N }, (_, i) => (i % a === 0 ? 3 : i % b === 0 ? 0 : 1));
+    const myShares = own.map((a, k) => ({ id: 'tsa' + k, owner: ME, local_id: a.id, name: a.name, avatar: a.avatar, counts: S.counts(a.id).slice(), visibility: k === 2 ? 'public' : 'private', auto_share: k < 2, findable: true, friend_link: a.friendLink || '', mogo_code: a.friendshipCode || '', prestige: 0 }));
+    const remoteRows = [
+      { id: 'trb', owner: BOB, name: 'Bob Main', avatar: 'f20', counts: pattern(7, 5), prestige: 0 },
+      { id: 'trc', owner: CARA, name: 'Cara Crypt', avatar: 'f36', counts: pattern(4, 9), prestige: 0 },
+    ];
+    const s0 = myShares[0] || { id: 'tsa0', name: 'Your account' }, s1 = myShares[1] || s0;
+    return {
+      user: { id: ME }, status: 'synced', sync: { at: now - 60000 },
+      prefs: { planFriends: true, planGroups: ['tg1'], hidden: {} },
+      profile: { id: ME, username: 'you', display_name: 'You (tour)', avatar: 'f04', friend_code: 'MM-TOUR-2026', bio: '' },
+      people: {
+        [ME]: { id: ME, username: 'you', display_name: 'You (tour)', avatar: 'f04' },
+        [BOB]: { id: BOB, username: 'bob', display_name: 'Bob the Ghoul', avatar: 'f20', bio: 'Always has Frankie spares' },
+        [CARA]: { id: CARA, username: 'cara', display_name: 'Cara', avatar: 'f36', bio: 'Racers captain' },
+        [DAN]: { id: DAN, username: 'dan', display_name: 'Dan', avatar: 'f08' },
+      },
+      friendships: [
+        { id: 'tf1', requester: ME, addressee: BOB, status: 'accepted', created_at: iso(-9e8) },
+        { id: 'tf2', requester: CARA, addressee: ME, status: 'accepted', created_at: iso(-5e8) },
+        { id: 'tf3', requester: DAN, addressee: ME, status: 'pending', via_account: s0.id, created_at: iso(-3e5) },
+      ],
+      friendIds: new Set([BOB, CARA]),
+      myShares, remoteRows, rowsById: new Map(remoteRows.map((r) => [r.id, r])),
+      keys: Object.fromEntries(myShares.map((r, k) => [r.id, { account_id: r.id, friend_token: ['MMA-7KQ2-XF9P-3MWD', 'MMA-G7H5-TLY8-BWT5', 'MMA-N4RC-8ZUE-2QPA'][k] }])),
+      grants: [{ account_id: s0.id, viewer: BOB }, { account_id: s1.id, viewer: BOB }, { account_id: s0.id, viewer: CARA }],
+      groups: [
+        { id: 'tg1', name: 'Crypt Crew Traders', description: 'Daily swaps, Golden Blitz planning and partner events', visibility: 'private', icon: 'f36', owner: ME },
+        { id: 'tg2', name: 'Open Graveyard', description: 'A public trading hall for everyone', visibility: 'public', icon: 'f08', owner: CARA },
+      ],
+      myRoles: { tg1: 'owner', tg2: 'member' },
+      groupMembers: [{ group_id: 'tg1', user_id: ME, role: 'owner' }, { group_id: 'tg1', user_id: BOB, role: 'admin' }, { group_id: 'tg1', user_id: CARA, role: 'member' },
+        { group_id: 'tg2', user_id: CARA, role: 'owner' }, { group_id: 'tg2', user_id: ME, role: 'member' }],
+      groupAccounts: [{ group_id: 'tg1', account_id: s0.id }, { group_id: 'tg1', account_id: 'trb' }, { group_id: 'tg1', account_id: 'trc' }],
+      invites: [
+        { id: 'ti1', group_id: 'tg1', token: 'MMG-CRYP-T4CR-3W26', label: 'Discord', uses: 3, max_uses: 25, expires_at: iso(6 * 864e5), revoked: false },
+        { id: 'ti2', group_id: 'tg1', token: 'MMG-8QZP-LM2K-7XRA', label: 'Sam', uses: 1, max_uses: 1, expires_at: iso(864e5), revoked: false },
+      ],
+      trades: [
+        { id: 'tt1', status: 'pending', created_by: BOB, giver: ME, receiver: BOB, giver_account: s0.id, receiver_account: 'trb', giver_name: s0.name, receiver_name: 'Bob Main', stickers: easy.slice(10, 13), message: 'Can send gold back in the next Blitz!', updated_at: iso(-6e5) },
+        { id: 'tt2', status: 'sent', created_by: CARA, giver: CARA, receiver: ME, giver_account: 'trc', receiver_account: s1.id, giver_name: 'Cara Crypt', receiver_name: s1.name, stickers: easy.slice(30, 32), message: '', updated_at: iso(-2e5) },
+        { id: 'tt3', status: 'open', created_by: BOB, receiver: BOB, receiver_account: 'trb', receiver_name: 'Bob Main', stickers: easy.slice(50, 53), group_id: 'tg1', message: 'Need these to close a set', updated_at: iso(-9e5) },
+        { id: 'tt4', status: 'done', created_by: ME, giver: BOB, receiver: ME, giver_account: 'trb', receiver_account: s0.id, giver_name: 'Bob Main', receiver_name: s0.name, stickers: easy.slice(70, 74), message: '', updated_at: iso(-864e5) },
+      ],
+      partnerships: [
+        { id: 'tp1', kind: 'partner', title: 'Haunted House build', created_by: ME, group_id: 'tg1', open_to_group: false, goal: 80000, ends_at: iso(3 * 864e5), notes: 'Save the big dice multipliers for Saturday.' },
+        { id: 'tp2', kind: 'racers', title: 'Transylvania Racers', created_by: CARA, group_id: null, open_to_group: false, goal: 0, ends_at: iso(2 * 864e5), notes: '' },
+        { id: 'tp3', kind: 'adventure', title: 'Demon Hunters Club', created_by: BOB, group_id: 'tg1', open_to_group: true, goal: 0, ends_at: iso(5 * 864e5), notes: 'Two spots left!' },
+      ],
+      pmembers: [
+        { partnership_id: 'tp1', user_id: ME, account_name: s0.name, status: 'joined', progress: 21500, note: '' },
+        { partnership_id: 'tp1', user_id: BOB, account_name: 'Bob Main', status: 'joined', progress: 30250, note: 'saving dice for the weekend' },
+        { partnership_id: 'tp2', user_id: CARA, account_name: 'Cara Crypt', status: 'joined', progress: 1200, note: '' },
+        { partnership_id: 'tp2', user_id: ME, account_name: '', status: 'invited', progress: 0, note: '' },
+        { partnership_id: 'tp3', user_id: BOB, account_name: 'Bob Main', status: 'joined', progress: 40, note: '' },
+        { partnership_id: 'tp3', user_id: CARA, account_name: 'Cara Crypt', status: 'joined', progress: 25, note: '' },
+      ],
+    };
+  }
+  function withTour(fn) {
+    const saved = {}; TOUR_KEYS.forEach((k) => (saved[k] = C[k]));
+    Object.assign(C, tourData());
+    try { return fn(); } finally { Object.assign(C, saved); }
+  }
+
   MM.Social = {
     render() {
       const page = $('#page-social'); if (!page) return;
+      if (inTour()) { withTour(() => renderMain(page, true)); return; }
       if (!CONFIGURED) { page.innerHTML = setupHtml(); return; }
       if (!C.user) { page.innerHTML = signedOutHtml(); bindSignedOut(page); hydrate(page); return; }
+      renderMain(page, false);
+    },
+  };
+  function renderMain(page, tour) {
       const n = needsMe();
       const tabs = [['friends', 'i-users', 'Friends', n.friends.length], ['trades', 'i-swap', 'Trades', n.trades.length], ['groups', 'i-grid', 'Groups', 0], ['events', 'i-calendar', 'Partner events', n.events.length], ['albums', 'i-book', 'My albums', 0]];
       const p = C.profile || {};
       page.innerHTML = `
         <div class="page-head"><div><h1 class="display">Friends <span class="alt">&amp; Groups</span></h1>
           <p class="lede">Trade with friends, run partner events and plan together in your own groups.</p></div></div>
+        ${tour ? `<div class="imp-ok cl-tour-note">${icon('i-compass')} <b>Tour preview</b> — sample friends, groups and trades. Nothing here is real; sign in after the tour to use it.</div>` : ''}
         <div class="card cl-me">
           ${img(p.avatar, 'class="ava lg"')}
           <div class="cl-me-txt"><b>${esc(p.display_name)}</b><small>@${esc(p.username || '')}</small>
@@ -630,8 +712,7 @@
       const body = $('#cl-body');
       ({ friends: tabFriends, trades: tabTrades, groups: tabGroups, events: tabEvents, albums: tabAlbums })[UI.tab]?.(body);
       hydrate(page);
-    },
-  };
+  }
 
   function setupHtml() {
     return `<div class="page-head"><div><h1 class="display">Friends <span class="alt">&amp; Groups</span></h1>
@@ -668,6 +749,15 @@
   }
 
   async function onPageClick(e) {
+    if (inTour()) {
+      // the tour preview can be browsed, but nothing in it can be changed
+      const t = e.target.closest('[data-tab]'), g = e.target.closest('[data-x]');
+      if (t && t.closest('.tabs')) { UI.tab = t.dataset.tab; UI.group = null; play('tap'); MM.Social.render(); return; }
+      if (g && g.dataset.x === 'open-group') { UI.group = g.dataset.id; MM.Social.render(); return; }
+      if (g && g.dataset.x === 'group-back') { UI.group = null; MM.Social.render(); return; }
+      if (g) { toast('This is the tour preview — sign in after the tour to do it for real.', 'info', '🧭'); if (g.tagName === 'SELECT' || g.type === 'checkbox') MM.Social.render(); }
+      return;
+    }
     const tab = e.target.closest('[data-tab]');
     if (tab && tab.closest('.tabs') && tab.closest('#page-social')) { UI.tab = tab.dataset.tab; UI.group = null; UI.save(); play('tap'); MM.Social.render(); return; }
     const b = e.target.closest('[data-x]'); if (!b) return;
@@ -1371,7 +1461,7 @@
 
   /* ---------------------------------------------------------------- modals: auth, onboarding, profile, conflicts */
   UI.auth = function (mode = 'in') {
-    const provs = (cfg.providers || []).filter((p) => /^[a-z]+$/.test(p));
+    const provs = (cfg.providers || []).filter((p) => /^[a-z]+$/.test(p) && (!C.providersOn || C.providersOn.has(p)));
     const m = MM.modal({
       title: mode === 'up' ? 'Create your account' : 'Sign in', ico: 'i-users',
       body: `<div class="seg" id="au-mode"><button data-v="in" class="${mode === 'in' ? 'on' : ''}">Sign in</button><button data-v="up" class="${mode === 'up' ? 'on' : ''}">Create account</button></div>

@@ -3,7 +3,7 @@
    - Code (html/js/css/manifest): network-first, so a new deploy shows up on the next load.
    - Artwork and everything else: cache-first, cached the first time it is seen.
    - After the page settles it may ask us to warm the sticker thumbnails in the background. */
-const VERSION = 'v16-cloud';
+const VERSION = 'v17-cloud-live';
 const SHELL_CACHE = 'mm-shell-' + VERSION;
 const ART_CACHE = 'mm-art-v1'; // survives app updates; artwork paths do not change between builds
 const SHELL = [

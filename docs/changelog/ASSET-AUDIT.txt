@@ -48,7 +48,7 @@ FULL DATA / LINKAGE VALIDATION
 - Gold distribution remains 30 total across Sets 13-22: 1,1,1,2,3,3,4,4,5,6.
 
 PREVIOUS CODE / LINKAGE CORRECTIONS RETAINED
-- Set 22 #9 canonical title is Cough! Cough! Cough! (6-star, regular). The old Couch spelling remains only as an import alias for compatibility.
+- Set 22 #9 canonical title is Couch! Couch! Couch! (6-star, regular), matching the official card art. The old Cough spelling remains only as an import alias for compatibility.
 - Set 17 Boogie Bash corrected linkage remains in place for Dance Idols, Do The Worm, Shredding, Wall Flowers, Punchline, and To Be Free.
 - Token and favicon IDs remain linked to their supplied numbered assets.
 
@@ -58,7 +58,7 @@ SPOT-CHECKED PRIOR VISUAL CORRECTIONS
 - Ecto-1: 5-star Gold
 - Shh!: 4-star regular
 - Big Town Heroes: 6-star regular
-- Cough! Cough! Cough!: 6-star regular
+- Couch! Couch! Couch!: 6-star regular
 
 SOURCE NOTE
 MonopolyGO.wiki's September 20 Monster Mash preview reports 22 sets, 198 stickers, and 30 Gold Stickers, and states that the set images are the reference for sticker names, star ratings, and Gold status. It also labels the information as an early preview that may change before the September 23 release.

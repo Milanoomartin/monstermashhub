@@ -38,7 +38,7 @@ ASSET UPDATE NOTES
   - Artwork now loads from normal files under assets/ instead of multi-megabyte embedded base64 bundles.
   - Supplied PNG artwork was converted losslessly to WebP without resizing or flattening transparency.
   - Set 17 Boogie Bash source files were relinked/reordered to the sticker title actually pictured.
-  - Canonical Set 22 sticker 9 is Cough! Cough! Cough!; the former Couch spelling is accepted as an import alias.
+  - Canonical Set 22 sticker 9 is Couch! Couch! Couch! (matches the official card); the older Cough spelling is accepted as an import alias.
   - See ASSET-AUDIT.txt for the completed artwork/data verification and replacement log.
 
 FAVICONS & PWA APP ICONS

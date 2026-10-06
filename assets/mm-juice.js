@@ -268,7 +268,7 @@
   }, { passive: true });
 
   /* ---------------------------------------------------------------- page transitions */
-  const ORDER = ['album', 'accounts', 'trades', 'social', 'community', 'events', 'games', 'vault', 'progress', 'collection', 'io', 'lab'];
+  const ORDER = ['album', 'accounts', 'trades', 'social', 'community', 'board', 'events', 'games', 'vault', 'progress', 'collection', 'io', 'bridge', 'lab'];
   let navDir = 'fwd', navAt = 0;
   const origGo = MM.go;
   MM.go = function (page, opts) {

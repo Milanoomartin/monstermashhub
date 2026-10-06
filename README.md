@@ -36,6 +36,22 @@ The app opens on an email sign-in screen. Your album lives in the browser and sa
 | **Import / Export** | CSV account lists, friend lists and sticker exports with preview + undo |
 | **Friends & Groups** | friends, groups with invite tokens, approved trades and partner events |
 | **Community** | feed, opt-in leaderboards, public albums, staff roles and moderation |
+| **Board Builder** | per-account board, landmark levels, Builder's Bash estimates and a build emulator |
+| **Album Bridge** | free Tampermonkey userscript that brings your official album, picture, board and board costs in |
+
+## Album Bridge & Board Builder 🏗️
+
+- **Album Bridge** ([`userscripts/monster-mash-album-bridge.user.js`](userscripts/monster-mash-album-bridge.user.js)) runs in Tampermonkey on the official MONOPOLY GO site, the MOGO Wiki board calculator and this Hub. It captures:
+  - the whole **sticker album** (all 198 stickers with duplicates),
+  - your **profile picture with its frame and decal**, redrawn exactly as the official site lays them out,
+  - your **Tycoon profile**: level, current board name and number, tokens, shields and dice,
+  - every **landmark upgrade price** for your board from the [MOGO Wiki calculator](https://monopolygo.wiki/mogo-tools/board-upgrade-calculator), read from what the page has already loaded. Nothing is sent to the wiki.
+
+  Everything waits for your review in the Hub, where you pick the account and choose what to apply. The in-app **Album Bridge** page has install and download buttons, a six-step tutorial with screenshots, and an "installed / update ready" check.
+- **Board Builder** keeps a board per account: name and number, landmark levels 0–6 with each build stage's picture, remaining cash with and without **Builder's Bash** (50 / 40 / 30 / 20 / 10% by landmark slot, matching the wiki), savings and estimated rolls. The **build emulator** takes your cash on hand and lists exactly which upgrades it buys (cheapest first, left to right, or finish a landmark), with a preview before you save.
+- **Account pictures:** tap any account picture to upload a photo, use your MONOPOLY GO picture, or pick an icon.
+
+**Shipping a userscript update:** edit the script, raise `@version` (for example `1.1.0` → `1.1.1`), and push. Tampermonkey checks `@updateURL` (the copy GitHub Pages serves at `/monstermashhub/userscripts/monster-mash-album-bridge.user.js`) and offers the update to everyone who installed it. If the version number stays the same, nobody gets the update.
 
 ## Accounts, Friends, Groups & Community ☁️
 
@@ -49,7 +65,7 @@ The app opens on an email sign-in screen. Your album lives in the browser and sa
 - **Profile photos** are uploaded to Supabase Storage (cropped and resized on the device).
 - **Roles:** the first account is Admin. Admins make Moderators and custom roles (unique name, colour, rules, and permissions such as removing photos or editing/deleting posts). Nobody can grant permissions they don't have.
 
-Setup: **[docs/SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md)**. Every rule about who can see or change what lives in [`supabase/schema.sql`](supabase/schema.sql) and is covered by 132 automated checks in `tools/test-schema.html`.
+Setup: **[docs/SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md)**. Every rule about who can see or change what lives in [`supabase/schema.sql`](supabase/schema.sql) and is covered by 133 automated checks in `tools/test-schema.html`.
 
 ## Juice ✨
 
@@ -96,6 +112,11 @@ index.html              the app (styles, markup and engine)
 assets/mm-juice.*       animation / sound / feel layer
 assets/mm-cloud.*       sign-in, cloud save, Friends & Groups (Supabase) — mm-cloud-config.js holds the project URL + public key
 assets/mm-community.js  Community page: feed, leaderboards, public albums, staff tools
+assets/mm-board.js      Board Builder: landmark levels, Builder's Bash estimates, build emulator
+assets/mm-bridge.js     Album Bridge guide page + review of profile / board captures
+assets/mm-tools.css     styles for the two pages above and account pictures
+assets/bridge/          tutorial screenshots
+userscripts/            the Album Bridge Tampermonkey script (served for install + auto-update)
 supabase/schema.sql     database tables + security rules (run once in Supabase)
 assets/mm-*.js          artwork maps (key → file path)
 assets/stickers/        full-resolution sticker art

@@ -3,13 +3,13 @@
    - Code (html/js/css/manifest): network-first, so a new deploy shows up on the next load.
    - Artwork and everything else: cache-first, cached the first time it is seen.
    - After the page settles it may ask us to warm the sticker thumbnails in the background. */
-const VERSION = 'v18-community';
+const VERSION = 'v19-board-bridge';
 const SHELL_CACHE = 'mm-shell-' + VERSION;
 const ART_CACHE = 'mm-art-v1'; // survives app updates; artwork paths do not change between builds
 const SHELL = [
   './', './index.html', './manifest.webmanifest',
   './assets/mm-juice.css', './assets/mm-juice.js',
-  './assets/mm-cloud.css', './assets/mm-cloud.js', './assets/mm-cloud-config.js', './assets/mm-community.js',
+  './assets/mm-cloud.css', './assets/mm-cloud.js', './assets/mm-cloud-config.js', './assets/mm-community.js', './assets/mm-board.js', './assets/mm-bridge.js', './assets/mm-tools.css',
   './assets/mm-art-core.js', './assets/mm-stickers-a.js', './assets/mm-stickers-b.js',
   './assets/ui/monster-mash-header.webp', './assets/ui/monster-mash-header-blur.webp',
   './assets/pwa/icon-180.png', './assets/pwa/icon-192.png', './assets/pwa/icon-512.png',

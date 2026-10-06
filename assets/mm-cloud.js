@@ -1058,7 +1058,7 @@
   function accountChecklist(checked, lockedId) {
     const shares = C.myShares, local = localAccounts().filter((a) => !shareFor(a.id));
     return `<div class="cl-checks">${shares.map((r) => `<label class="cl-check"><input type="checkbox" value="${r.id}" ${checked.has(r.id) ? 'checked' : ''} ${r.id === lockedId ? 'checked disabled' : ''}>${img(r.avatar, 'class="ava sm"')}<span><b>${esc(r.name)}</b>${r.visibility === 'public' ? '<small>public album — everyone can see it</small>' : r.id === lockedId ? '<small>the account they asked through</small>' : ''}</span></label>`).join('')}
-      ${local.map((a) => `<label class="cl-check"><input type="checkbox" value="local:${a.id}">${img(a.avatar, 'class="ava sm"')}<span><b>${esc(a.name)}</b><small>not online yet — ticking puts it online (private)</small></span></label>`).join('')}
+      ${local.map((a) => `<label class="cl-check"><input type="checkbox" value="local:${a.id}">${img(MM.avatarKey(a), 'class="ava sm"')}<span><b>${esc(a.name)}</b><small>not online yet — ticking puts it online (private)</small></span></label>`).join('')}
       ${!shares.length && !local.length ? '<p class="note">You have no accounts yet. Add one on the Accounts page.</p>' : ''}</div>`;
   }
   async function resolveChecked(m) {
@@ -1311,7 +1311,7 @@
         <div class="card"><h3>${icon('i-swap')} Plan with this group</h3>
           <label class="switch"><input type="checkbox" data-x="plan-group" data-id="${g.id}" ${planning ? 'checked' : ''}><span class="knob"></span><span>Add this group's albums to my Album &amp; Trade Planner</span></label>
           <div class="cl-sub" style="margin-top:12px">Share my albums here</div>
-          <div class="cl-checks">${localAccounts().map((a) => { const r = shareFor(a.id); return `<label class="cl-check"><input type="checkbox" data-x="group-share" data-id="${g.id}" data-local="${a.id}" ${r && accIds.has(r.id) ? 'checked' : ''}>${img(a.avatar, 'class="ava sm"')}<span><b>${esc(a.name)}</b></span></label>`; }).join('') || '<p class="note">No accounts on this device.</p>'}</div>
+          <div class="cl-checks">${localAccounts().map((a) => { const r = shareFor(a.id); return `<label class="cl-check"><input type="checkbox" data-x="group-share" data-id="${g.id}" data-local="${a.id}" ${r && accIds.has(r.id) ? 'checked' : ''}>${img(MM.avatarKey(a), 'class="ava sm"')}<span><b>${esc(a.name)}</b></span></label>`; }).join('') || '<p class="note">No accounts on this device.</p>'}</div>
         </div>
         ${admin ? `<div class="card"><h3>${icon('i-unlock')} Invite tokens</h3>
           <p class="note">Share a token or its link. People who use it ask to join${g.auto_approve ? ' and get in straight away (auto-approve is on)' : ' and wait for an admin'}. Tokens can expire, have a use limit, or be revoked.</p>
@@ -1426,7 +1426,7 @@
     const m = MM.modal({
       title: 'Offer to help', ico: 'i-gift', size: 'mid',
       body: `<p class="ink2" style="font-weight:700">${tradeHeadline(t)}. Which of your accounts would send? They approve your offer first.</p>
-        <div class="cl-checks">${locals.map(({ a, can }, k) => `<label class="cl-check"><input type="radio" name="cl-claim" value="${a.id}" ${k === 0 ? 'checked' : ''}>${img(a.avatar, 'class="ava sm"')}<span><b>${esc(a.name)}</b><small>has spares for ${can} of ${t.stickers.length}</small></span></label>`).join('')}</div>`,
+        <div class="cl-checks">${locals.map(({ a, can }, k) => `<label class="cl-check"><input type="radio" name="cl-claim" value="${a.id}" ${k === 0 ? 'checked' : ''}>${img(MM.avatarKey(a), 'class="ava sm"')}<span><b>${esc(a.name)}</b><small>has spares for ${can} of ${t.stickers.length}</small></span></label>`).join('')}</div>`,
       foot: `<button class="btn ghost" data-no>Cancel</button><button class="btn primary" data-yes>Send offer</button>`,
     });
     m.$('[data-no]').onclick = m.close;
@@ -1489,7 +1489,7 @@
       let done = false;
       const m = MM.modal({
         title, ico: 'i-users', size: 'mid',
-        body: `<p class="ink2" style="font-weight:700">${text}</p><div class="cl-checks">${locals.map((a, k) => `<label class="cl-check"><input type="radio" name="cl-acc" value="${a.id}" ${k === 0 ? 'checked' : ''}>${img(a.avatar, 'class="ava sm"')}<span><b>${esc(a.name)}</b></span></label>`).join('')}</div>`,
+        body: `<p class="ink2" style="font-weight:700">${text}</p><div class="cl-checks">${locals.map((a, k) => `<label class="cl-check"><input type="radio" name="cl-acc" value="${a.id}" ${k === 0 ? 'checked' : ''}>${img(MM.avatarKey(a), 'class="ava sm"')}<span><b>${esc(a.name)}</b></span></label>`).join('')}</div>`,
         foot: `<button class="btn ghost" data-no>Cancel</button><button class="btn primary" data-yes>Continue</button>`,
         onClose: () => { if (!done) res(null); },
       });
@@ -1596,7 +1596,7 @@
       <div class="section-title">${icon('i-book')} My accounts <small>${locals.length}</small></div>
       <div class="cl-list">${locals.map((a) => shareRow(a)).join('') || '<div class="empty">No accounts on this device yet.</div>'}</div>
       ${remotes.length ? `<div class="section-title">${icon('i-users')} Friends' albums on this device <small>${remotes.length}</small></div>
-        <div class="cl-list">${remotes.map((a) => `<div class="card cl-row">${img(a.avatar, 'class="ava sm"')}<span class="cl-grow"><b>${esc(a.name)}</b><br><small class="muted">${esc(a.note || '')}</small></span><label class="switch"><input type="checkbox" data-x="show-remote" data-id="${a.id}" ${a.hidden ? '' : 'checked'}><span class="knob"></span><span>Show</span></label></div>`).join('')}</div>` : ''}
+        <div class="cl-list">${remotes.map((a) => `<div class="card cl-row">${img(MM.avatarKey(a), 'class="ava sm"')}<span class="cl-grow"><b>${esc(a.name)}</b><br><small class="muted">${esc(a.note || '')}</small></span><label class="switch"><input type="checkbox" data-x="show-remote" data-id="${a.id}" ${a.hidden ? '' : 'checked'}><span class="knob"></span><span>Show</span></label></div>`).join('')}</div>` : ''}
       <div class="section-title">${icon('i-trash')} Cloud data</div>
       <div class="card"><p class="note">Delete your cloud save and take all your accounts offline. Your album on this device is kept.</p><div class="row" style="margin-top:8px"><button class="btn sm danger" data-x="wipe-cloud">Delete my cloud data</button></div></div>`;
   }
@@ -1606,7 +1606,7 @@
     const mode = !r ? 'off' : r.visibility;
     const opt = (k, label, dis) => `<label class="switch ${dis ? 'dim' : ''}"><input type="checkbox" data-x="share-opt" data-id="${r.id}" data-opt="${k}" ${r[k] ? 'checked' : ''} ${dis ? 'disabled' : ''}><span class="knob"></span><span>${label}</span></label>`;
     return `<div class="card cl-share ${r ? 'on' : ''}">
-      <div class="cl-row">${img(a.avatar, 'class="ava lg"')}<span class="cl-grow"><b>${esc(a.name)}</b><br><small class="muted">${r ? `${plural(viewers, 'friend')} can see it · in ${plural(groups, 'group')}${r.visibility === 'public' ? ' · public album' : ''}${r.on_leaderboard ? ' · on leaderboards' : ''}` : 'Only on this device'}</small></span>
+      <div class="cl-row">${img(MM.avatarKey(a), 'class="ava lg"')}<span class="cl-grow"><b>${esc(a.name)}</b><br><small class="muted">${r ? `${plural(viewers, 'friend')} can see it · in ${plural(groups, 'group')}${r.visibility === 'public' ? ' · public album' : ''}${r.on_leaderboard ? ' · on leaderboards' : ''}` : 'Only on this device'}</small></span>
         <label class="field cl-mode"><span>Online</span><select class="select" data-x="share-mode" data-local="${a.id}">
           <option value="off" ${mode === 'off' ? 'selected' : ''}>Off — this device only</option><option value="private" ${mode === 'private' ? 'selected' : ''}>Private — friends I choose</option><option value="public" ${mode === 'public' ? 'selected' : ''}>Public album — anyone signed in</option></select></label></div>
       ${r ? `<div class="cl-opts">
@@ -1744,7 +1744,7 @@
     return `<h2>Your albums</h2><p class="ink2">Choose which accounts go online and what others may see. <b>Off</b> keeps an account on this device only.</p>
       <div class="cl-list">${locals.map((a) => { const s = st.accounts[a.id], on = s.mode !== 'off', hasCode = !!(a.friendshipCode || a.friendLink);
         const opt = (k, label, dis) => `<label class="switch ${dis ? 'dim' : ''}"><input type="checkbox" data-k="${k}" ${s[k] ? 'checked' : ''} ${dis ? 'disabled' : ''}><span class="knob"></span><span>${label}</span></label>`;
-        return `<div class="card cl-share ${on ? 'on' : ''}" data-acc="${a.id}"><div class="cl-row">${img(a.avatar, 'class="ava sm"')}<span class="cl-grow"><b>${esc(a.name)}</b><br><small class="muted">${a.owner === 'own' ? 'your account' : 'a friend’s account you track'}</small></span>
+        return `<div class="card cl-share ${on ? 'on' : ''}" data-acc="${a.id}"><div class="cl-row">${img(MM.avatarKey(a), 'class="ava sm"')}<span class="cl-grow"><b>${esc(a.name)}</b><br><small class="muted">${a.owner === 'own' ? 'your account' : 'a friend’s account you track'}</small></span>
           <select class="select cl-mode"><option value="off" ${s.mode === 'off' ? 'selected' : ''}>Off</option><option value="private" ${s.mode === 'private' ? 'selected' : ''}>Private</option><option value="public" ${s.mode === 'public' ? 'selected' : ''}>Public album</option></select></div>
           ${on ? `<div class="cl-opts">${opt('on_leaderboard', 'Leaderboard', !st.leaderboard)}${opt('show_code', 'Show MOGO code', !a.friendshipCode)}${opt('show_link', 'Show MOGO link', !a.friendLink)}${opt('findable', 'Findable by MOGO code', !hasCode)}${opt('auto_share', 'New friends see it')}</div>` : ''}</div>`; }).join('')}</div>`;
   }

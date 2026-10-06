@@ -19,6 +19,14 @@
   - **build emulator**: cash on hand plus an order (cheapest first, left to right, finish a landmark), giving the exact list of affordable upgrades, cash left, how far short the next one is and roughly how many rolls that takes. Preview on the landmarks, then Build to save,
   - **Open wiki calculator** deep link with map number, board key, levels and Bash filled in.
 - **Album Bridge** page (`#bridge`): install, download and Tampermonkey buttons, installed / update-ready status, an animated flow, a six-step tutorial with screenshots, privacy notes and tips. Promoted from Accounts and Import / Export.
-- **Account pictures**: upload a photo (cropped to 256 px WebP on the device), use the MONOPOLY GO picture, remove it, or pick an icon. Photos are kept with the account in local storage and your own cloud save. Friends still see the icon.
+- **Account pictures**: upload a photo (cropped to 256 px WebP on the device), use the MONOPOLY GO picture, remove it, or pick an icon. Photos are kept with the account in local storage and your own cloud save, and shared with everyone who can see the album once migration 001 is run (below).
 - Tutorial: 7 new steps (account pictures, Board Builder ×4, Album Bridge ×2).
 - Service worker `v19-board-bridge`. The Pages workflow now publishes `userscripts/`.
+
+## Account photos for everyone (migration 001)
+- Run `supabase/migrations/001-account-photos.sql` once in the Supabase SQL Editor. It keeps all data.
+- Each online album's picture is uploaded to the owner's folder of the `avatars` bucket (`<user id>/acct-<account>-<version>.webp`) and linked from `shared_accounts.photo_path`. The database only accepts files in the owner's own folder.
+- Friends' synced albums, group albums, public albums, the album viewer and leaderboards all show it. Replacing a photo deletes the old file, and removing it goes back to the icon.
+- Moderators (`moderate_avatars`) get an **Account photos** list under Community → Staff, private albums included, and can remove any. A removed picture is not uploaded again, but a new one is.
+- Works before the migration too: albums just keep their icon until it's run.
+- Schema tests: 147 checks, including the migration over an older database with data. Service worker `v20-account-photos`.

@@ -26,8 +26,9 @@
   const SYNC_KEY = 'mmx-cloud-sync-v1';
   const LINK_KEY = 'mmx-cloud-link';
   const UI_KEY = 'mmx-cloud-ui';
-  // shared_accounts columns the app reads (Monopoly GO code/link live in account_contacts)
-  const SA_COLS = 'id,owner,local_id,name,avatar,visibility,auto_share,findable,on_leaderboard,show_code,show_link,counts,prestige,updated_at';
+  // shared_accounts columns the app reads (Monopoly GO code/link live in account_contacts).
+  // "*" so photo_path arrives once supabase/migrations/001-account-photos.sql has been run, and nothing breaks before.
+  const SA_COLS = '*';
 
   /* ---------------------------------------------------------------- utils */
   const $ = (s, r = document) => r.querySelector(s);
@@ -116,6 +117,12 @@
   const avatar = (p, cls = 'ava sm') => (p && p.avatar_url
     ? `<img src="${esc(p.avatar_url)}" class="${cls} cl-photo" alt="" loading="lazy" referrerpolicy="no-referrer">`
     : img(p ? p.avatar : 'f04', `class="${cls}"`));
+  /** Public address of an account photo kept in the "avatars" bucket. */
+  const photoUrl = (path) => (path && C.sb ? C.sb.storage.from('avatars').getPublicUrl(path).data.publicUrl : '');
+  /** Picture of a shared album row: its photo if it has one, else its Monster Mash icon. */
+  const acctImg = (r, attrs = 'class="ava sm"') => (r && r.photo_path
+    ? `<img src="${esc(photoUrl(r.photo_path))}" ${attrs} alt="" loading="lazy" referrerpolicy="no-referrer" style="object-fit:cover">`
+    : img(r ? r.avatar : 'f04', attrs));
   const rolesOf = (uid) => C.userRoles.filter((r) => r.user_id === uid).map((r) => C.roles.find((x) => x.id === r.role_id)).filter(Boolean)
     .sort((a, b) => (a.builtin === 'admin' ? -1 : b.builtin === 'admin' ? 1 : a.builtin ? -1 : b.builtin ? 1 : a.name.localeCompare(b.name)));
   const badges = (uid) => rolesOf(uid).map((r) => `<span class="cl-role" style="--rc:${esc(r.color)}" title="${esc(r.description)}">${esc(r.name)}</span>`).join('');
@@ -450,6 +457,38 @@
     return { name: String(a.name || 'Account').slice(0, 60), avatar: /^[a-z0-9_]{1,12}$/.test(a.avatar || '') ? a.avatar : 'f04', prestige: +a.prestige || 0, counts: S.counts(a.id).slice() };
   }
   const contactFields = (a) => ({ mogo_code: String(a.friendshipCode || '').slice(0, 40), friend_link: String(a.friendLink || '').slice(0, 300) });
+  /* Account photos: uploaded into this player's folder of the "avatars" bucket and linked from the
+     shared album (photo_path), so friends, groups and public viewers see them. Needs
+     supabase/migrations/001-account-photos.sql; until then rows have no photo_path and this is skipped. */
+  const photoBusy = new Set();
+  async function uploadAccountPhoto(a) {
+    const m = /^data:(image\/(webp|png|jpeg));base64,/.exec(a.photo || ''); if (!m) return null;
+    const blob = await (await fetch(a.photo)).blob();
+    const safe = String(a.id).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64) || 'acct';
+    const path = `${me()}/acct-${safe}-${Math.floor(+a.photoV || 0) || Date.now()}.${m[2] === 'jpeg' ? 'jpg' : m[2]}`;
+    const up = await C.sb.storage.from('avatars').upload(path, blob, { contentType: m[1], upsert: true, cacheControl: '31536000' });
+    if (up.error) throw up.error;
+    return path;
+  }
+  async function syncPhoto(row, a) {
+    if (!('photo_path' in row) || photoBusy.has(a.id)) return;
+    photoBusy.add(a.id);
+    try {
+      const done = a.photoCloud && a.photoCloud.uid === me() && a.photoCloud.v === (a.photoV || 0) ? a.photoCloud.path : null;
+      let target = null;
+      if (a.photo) {
+        if (done && row.photo_cleared === done) target = null; // a moderator removed this exact picture; a new one will upload
+        else if (done) target = done;
+        else { target = await uploadAccountPhoto(a); if (target) { a.photoCloud = { uid: me(), v: a.photoV || 0, path: target }; S.save(); } }
+      }
+      if ((row.photo_path || null) !== target) {
+        const old = row.photo_path;
+        Object.assign(row, await A.updateShare(row.id, { photo_path: target }));
+        if (old && old !== target && old.startsWith(me() + '/')) C.sb.storage.from('avatars').remove([old]).catch(() => {});
+      }
+    } catch (e) { console.warn('account photo sync failed', e); }
+    finally { photoBusy.delete(a.id); }
+  }
   async function pushShares() {
     for (const row of C.myShares) {
       const a = S.acct(row.local_id); if (!a) continue;
@@ -457,6 +496,7 @@
       if (Object.keys(f).some((k) => (k === 'counts' ? !sameArr(row.counts, f.counts) : row[k] !== f[k]))) {
         try { Object.assign(row, await A.updateShare(row.id, f)); } catch (e) { console.warn('share update failed', e); }
       }
+      await syncPhoto(row, a);
       const c = contactFields(a), have = C.contacts[row.id] || {};
       if (c.mogo_code !== (have.mogo_code || '') || c.friend_link !== (have.friend_link || '')) {
         try { await A.updateContact(row.id, c); C.contacts[row.id] = { ...have, ...c }; } catch (e) { console.warn('contact update failed', e); }
@@ -473,6 +513,7 @@
     if (c.mogo_code || c.friend_link) { try { await A.updateContact(row.id, c); } catch (_) {} }
     C.contacts[row.id] = { account_id: row.id, ...c };
     C.keys = Object.fromEntries((await A.keys()).map((k) => [k.account_id, k]));
+    syncPhoto(row, a);
     return row;
   };
 
@@ -550,7 +591,7 @@
     want.forEach((r, sid) => {
       const id = 'cl_' + sid, p = person(r.owner), l = C.links[sid] || {};
       let a = S.acct(id);
-      const fields = { name: r.name, avatar: r.avatar || 'f04', friendLink: l.friend_link || '', friendshipCode: l.mogo_code || '', prestige: r.prestige || 0,
+      const fields = { name: r.name, avatar: r.avatar || 'f04', photoUrl: r.photo_path ? photoUrl(r.photo_path) : '', friendLink: l.friend_link || '', friendshipCode: l.mogo_code || '', prestige: r.prestige || 0,
         note: `${handle(p)}'s shared album — updates from their app`, category: 'Cloud', owner: 'friend', cloud: { sid, uid: r.owner, username: p.username || '' } };
       if (!a) { a = { id, playerId: '', device: '', friendsMember: false, stickerbankMember: false, createdAt: Date.now(), order: ++order, hidden: !!C.prefs.hidden[sid], ...fields }; st.accounts.push(a); changed = true; }
       else if (Object.keys(fields).some((k) => JSON.stringify(a[k]) !== JSON.stringify(fields[k]))) { Object.assign(a, fields); changed = true; }
@@ -757,8 +798,8 @@
     finally { busy(btn, false); }
   }
   const who = (uid, extra = '') => { const p = person(uid); return `<span class="cl-who">${avatar(p, 'ava sm')}<b>${esc(p.display_name)}</b>${p.username ? `<small>@${esc(p.username)}</small>` : ''}${badges(uid)}${extra}</span>`; };
-  const acctLine = (r, extra = '') => { const s = stats(r.counts); return `<div class="cl-acct">${img(r.avatar, 'class="ava sm"')}<div><b>${esc(r.name)}</b><small>${s.have}/${MM.N} · ${s.sets}/22 sets · ${s.spare} spares</small></div>${extra}</div>`; };
-  C.util = { $, $$, esc, icon, img, thumb, avatar, badges, rolesOf, person, handle, who, plural, ago, fmtWhen, copy, shareLink, errMsg, run, toast, play, hydrate, stats, debounce, here, PERMS, KINDS, SA_COLS, isRemote, localAccounts };
+  const acctLine = (r, extra = '') => { const s = stats(r.counts); return `<div class="cl-acct">${acctImg(r)}<div><b>${esc(r.name)}</b><small>${s.have}/${MM.N} · ${s.sets}/22 sets · ${s.spare} spares</small></div>${extra}</div>`; };
+  C.util = { $, $$, esc, icon, img, thumb, avatar, acctImg, photoUrl, badges, rolesOf, person, handle, who, plural, ago, fmtWhen, copy, shareLink, errMsg, run, toast, play, hydrate, stats, debounce, here, PERMS, KINDS, SA_COLS, isRemote, localAccounts };
 
   /* ---------------------------------------------------------------- tutorial preview (sample friends & groups) */
   const TOUR_KEYS = ['user', 'profile', 'status', 'sync', 'prefs', 'friendships', 'friendIds', 'people', 'myShares', 'keys', 'grants', 'remoteRows', 'rowsById',
@@ -1057,7 +1098,7 @@
 
   function accountChecklist(checked, lockedId) {
     const shares = C.myShares, local = localAccounts().filter((a) => !shareFor(a.id));
-    return `<div class="cl-checks">${shares.map((r) => `<label class="cl-check"><input type="checkbox" value="${r.id}" ${checked.has(r.id) ? 'checked' : ''} ${r.id === lockedId ? 'checked disabled' : ''}>${img(r.avatar, 'class="ava sm"')}<span><b>${esc(r.name)}</b>${r.visibility === 'public' ? '<small>public album — everyone can see it</small>' : r.id === lockedId ? '<small>the account they asked through</small>' : ''}</span></label>`).join('')}
+    return `<div class="cl-checks">${shares.map((r) => `<label class="cl-check"><input type="checkbox" value="${r.id}" ${checked.has(r.id) ? 'checked' : ''} ${r.id === lockedId ? 'checked disabled' : ''}>${acctImg(r)}<span><b>${esc(r.name)}</b>${r.visibility === 'public' ? '<small>public album — everyone can see it</small>' : r.id === lockedId ? '<small>the account they asked through</small>' : ''}</span></label>`).join('')}
       ${local.map((a) => `<label class="cl-check"><input type="checkbox" value="local:${a.id}">${img(MM.avatarKey(a), 'class="ava sm"')}<span><b>${esc(a.name)}</b><small>not online yet — ticking puts it online (private)</small></span></label>`).join('')}
       ${!shares.length && !local.length ? '<p class="note">You have no accounts yet. Add one on the Accounts page.</p>' : ''}</div>`;
   }

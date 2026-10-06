@@ -123,9 +123,10 @@
   const storage = {
     from(bucket) {
       return {
-        async upload(path, blob) {
+        async upload(path, blob, opts = {}) {
           try {
             const data = await readAsDataUrl(blob);
+            if (opts.upsert) await run(`delete from storage.objects where bucket_id = $1 and name = $2`, [bucket, path]);
             await run(`insert into storage.objects (bucket_id, name, data) values ($1, $2, $3)`, [bucket, path, data]);
             try { localStorage.setItem(IMG_KEY + path, data); } catch (_) {}
             return { data: { path }, error: null };

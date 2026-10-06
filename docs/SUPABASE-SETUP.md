@@ -22,6 +22,16 @@ Running it creates every table, the security rules, the functions the app calls,
 > schema gives each of them a fresh profile, and the earliest one becomes Admin. Their albums are
 > still on their devices and upload again when they sign in.
 
+### Updates that keep your data (migrations)
+
+Later additions come as small files in `supabase/migrations/`. Run each one **once**, in number
+order, in the SQL Editor. They never erase anything, and running one twice is harmless. A fresh
+`schema.sql` already includes them all.
+
+| File | Adds |
+|---|---|
+| `001-account-photos.sql` | Account (album) pictures that everyone who can see the album sees: friends, groups, public albums and leaderboards. Moderators can review and remove them under Community → Staff. Until it's run, the app keeps working and pictures stay on your own devices. |
+
 ## 2. The first account becomes Admin
 
 The earliest sign-in account becomes **Admin** when the schema runs. If there are none yet, the very
@@ -88,7 +98,8 @@ When the GitHub Actions deploy finishes, open the site and create your (Admin) a
 Serve the folder locally (`python -m http.server 8000`) and open:
 
 - `http://localhost:8000/tools/test-schema.html` runs `schema.sql` in a browser-based PostgreSQL and
-  checks **132** security rules (approvals, roles, moderation, storage, leaderboards, privacy…).
+  checks **147** rules (approvals, roles, moderation, storage, leaderboards, account photos, privacy…),
+  including running each migration over an older database.
 - A local fake backend lets you click through everything: in the browser console run
   `localStorage.setItem('mmx-cloud-mock', '1'); location.reload()` (localhost only), then any email +
   password signs up. `MOCK.as('friend@example.test', "select public.add_friend('yourname')")` acts as a

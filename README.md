@@ -49,7 +49,7 @@ The app opens on an email sign-in screen. Your album lives in the browser and sa
 
   Everything waits for your review in the Hub, where you pick the account and choose what to apply. The in-app **Album Bridge** page has install and download buttons, a six-step tutorial with screenshots, and an "installed / update ready" check.
 - **Board Builder** keeps a board per account: name and number, landmark levels 0–6 with each build stage's picture, remaining cash with and without **Builder's Bash** (50 / 40 / 30 / 20 / 10% by landmark slot, matching the wiki), savings and estimated rolls. The **build emulator** takes your cash on hand and lists exactly which upgrades it buys (cheapest first, left to right, or finish a landmark), with a preview before you save.
-- **Account pictures:** tap any account picture to upload a photo, use your MONOPOLY GO picture, or pick an icon.
+- **Account pictures:** tap any account picture to upload a photo, use your MONOPOLY GO picture, or pick an icon. Once an album is online, its picture shows for everyone who can see it (needs [`supabase/migrations/001-account-photos.sql`](supabase/migrations/001-account-photos.sql)).
 
 **Shipping a userscript update:** edit the script, raise `@version` (for example `1.1.0` → `1.1.1`), and push. Tampermonkey checks `@updateURL` (the copy GitHub Pages serves at `/monstermashhub/userscripts/monster-mash-album-bridge.user.js`) and offers the update to everyone who installed it. If the version number stays the same, nobody gets the update.
 
@@ -65,7 +65,7 @@ The app opens on an email sign-in screen. Your album lives in the browser and sa
 - **Profile photos** are uploaded to Supabase Storage (cropped and resized on the device).
 - **Roles:** the first account is Admin. Admins make Moderators and custom roles (unique name, colour, rules, and permissions such as removing photos or editing/deleting posts). Nobody can grant permissions they don't have.
 
-Setup: **[docs/SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md)**. Every rule about who can see or change what lives in [`supabase/schema.sql`](supabase/schema.sql) and is covered by 133 automated checks in `tools/test-schema.html`.
+Setup: **[docs/SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md)**. Every rule about who can see or change what lives in [`supabase/schema.sql`](supabase/schema.sql) and is covered by 147 automated checks in `tools/test-schema.html`. Later database additions live in `supabase/migrations/` and keep your data.
 
 ## Juice ✨
 

@@ -288,6 +288,19 @@ try {
   ok('private albums on the board do not become viewable', lb[0].is_public === false && !(await sees('E', a1)));
   ok('player search finds people by name', (await as('D', "select * from public.find_players('ali')")).length === 1);
 
+  section('Account photos');
+  const ap = `${U.A}/acct-a1-1791256524163.webp`;
+  ok('owners can set an account photo from their own folder', !(await fails('A', 'update public.shared_accounts set photo_path = $1 where id = $2', [ap, a1])));
+  ok("…but not a file in someone else's folder", /check constraint|violates/i.test(await fails('A', 'update public.shared_accounts set photo_path = $1 where id = $2', [`${U.B}/acct-x-1.webp`, a1])));
+  ok('…nor a link to another site', /check constraint|violates/i.test(await fails('A', "update public.shared_accounts set photo_path = 'https://evil.example/x.png' where id = $1", [a1])));
+  ok("players cannot put a photo on someone else's album", (await as('D', 'update public.shared_accounts set photo_path = null where id = $1 returning id', [a1])).length === 0);
+  ok('the leaderboard shows account photos', (await as('D', 'select photo_path from public.leaderboard($1)', [stars]))[0].photo_path === ap);
+  ok('players cannot list or remove account photos', /cannot moderate/i.test(await fails('D', 'select * from public.mod_account_photos()')) && /cannot moderate/i.test(await fails('D', 'select public.mod_clear_account_photo($1)', [a1])));
+  ok('moderators see every account photo, private albums included', (await as('B', 'select * from public.mod_account_photos()')).some((r) => r.account_id === a1 && r.photo_path === ap));
+  ok('moderators can remove one (and get its file path back)', (await one('B', 'select public.mod_clear_account_photo($1) p', [a1])).p === ap);
+  const cleared = await one('A', 'select photo_path, photo_cleared from public.shared_accounts where id = $1', [a1]);
+  ok('the removed photo is remembered so it is not re-uploaded', cleared.photo_path === null && cleared.photo_cleared === ap);
+
   section('Re-running the schema with existing players');
   await db.exec(schema);
   const again = (await db.query('select count(*)::int n from public.profiles')).rows[0].n;
@@ -301,6 +314,27 @@ try {
   ok('internal functions cannot be called by players', /permission denied/i.test(await fails('A', 'select public.mm__befriend($1, $2)', [U.A, U.E])));
   await db.query('delete from auth.users where id = $1', [U.E]);
   ok('deleting a user removes their profile, accounts and roles', (await db.query('select (select count(*) from public.profiles where id = $1)::int + (select count(*) from public.shared_accounts where owner = $1)::int + (select count(*) from public.user_roles where user_id = $1)::int n', [U.E])).rows[0].n === 0);
+
+  section('Migration 001: account photos on an existing database');
+  const migration = await get('../supabase/migrations/001-account-photos.sql');
+  const main = db; db = new PGlite();
+  try {
+    await db.exec(await get('supabase-stubs.sql'));
+    await db.exec(schema);
+    // make it look like the database before this migration: no photo columns, old leaderboard
+    await db.exec(`alter table public.shared_accounts drop column photo_path, drop column photo_cleared;
+      drop function public.leaderboard(int[], int); drop function public.mod_account_photos(int); drop function public.mod_clear_account_photo(uuid);
+      create function public.leaderboard(stars int[] default null, lim int default 200) returns table (account_id uuid, have int) language sql as $f$ select null::uuid, 0 $f$;`);
+    await db.query('insert into auth.users (id, email) values ($1, $2)', [U.A, 'a@example.com']);
+    const keep = await share('A', 'acc1', 'Kept album');
+    await db.exec(migration);
+    ok('the migration runs over the old database', true);
+    ok('existing albums are kept', (await one('A', 'select name from public.shared_accounts where id = $1', [keep])).name === 'Kept album');
+    ok('albums get the photo columns', !(await fails('A', 'update public.shared_accounts set photo_path = $1 where id = $2', [`${U.A}/acct-acc1-5.webp`, keep])));
+    await db.exec(migration);
+    ok('the migration can be run again', (await one('A', 'select photo_path from public.shared_accounts where id = $1', [keep])).photo_path === `${U.A}/acct-acc1-5.webp`);
+    ok('the new functions are for signed-in players only', /permission denied/i.test(await fails(null, 'select * from public.mod_account_photos()')));
+  } finally { db = main; }
 } catch (e) {
   fail++; log(`<span class="bad">ERROR</span> ${esc(e.message || e)}`);
   console.error(e);

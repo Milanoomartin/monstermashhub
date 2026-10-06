@@ -2280,12 +2280,17 @@ const S = (MM.S = {
 MM.defaultAvatar = (i) => ['f04', 'f08', 'f36', 'f20', 'f17', 'f27'][i % 6];
 /** Account picture key: an uploaded/MONOPOLY GO photo (registered as art on the fly) or the chosen icon. */
 MM.avatarKey = (a) => {
-  if (a && a.photo && /^data:image\/(webp|png|jpeg);base64,/.test(a.photo)) {
-    const k = 'ph_' + a.id + '_' + (a.photoV || 0), art = window.MM_ART || (window.MM_ART = {});
-    if (art[k] !== a.photo) art[k] = a.photo;
+  if (!a) return 'f04';
+  const own = a.photo && /^data:image\/(webp|png|jpeg);base64,/.test(a.photo) ? a.photo : '';
+  // friends' shared albums carry a public Storage address instead (see mm-cloud.js)
+  const src = own || (a.photoUrl && /^(https:\/\/|data:image\/)/.test(a.photoUrl) ? a.photoUrl : '');
+  if (src) {
+    let h = 0; if (!own) for (let i = 0; i < src.length; i++) h = (h * 31 + src.charCodeAt(i)) | 0;
+    const k = 'ph_' + a.id + '_' + (own ? a.photoV || 0 : 'u' + (h >>> 0).toString(36)), art = window.MM_ART || (window.MM_ART = {});
+    if (art[k] !== src) art[k] = src;
     return k;
   }
-  return (a && a.avatar) || 'f04';
+  return a.avatar || 'f04';
 };
 /** Square-crop any image file to a small WebP data URL for an account picture. */
 MM.photoFromFile = async function (file, n = 256) {
@@ -4466,7 +4471,7 @@ MM.Accounts = {
               ${mogoNew ? `<button class="btn sm" data-ph="mogo">${artImg(MM.avatarKey({ id: a.id + '_mogo', photo: a.mogoPhoto }), 'class="ph-mini" alt=""')}Use MONOPOLY GO picture</button>` : ''}
               ${a.photo ? `<button class="btn sm ghost" data-ph="remove">${icon('i-trash', 'ico')}Remove photo</button>` : ''}
             </div>
-            <small class="muted">${a.mogoPhoto ? '' : 'Tip: the <a href="#" data-ph="guide">Album Bridge</a> can bring over your in-game picture and frame. '}Photos stay with this account in your browser and your own cloud save.</small>
+            <small class="muted">${a.mogoPhoto ? '' : 'Tip: the <a href="#" data-ph="guide">Album Bridge</a> can bring over your in-game picture and frame. '}When this album is online, its picture shows for everyone who can see it — friends, groups, public albums and leaderboards.</small>
           </div>
           <input type="file" accept="image/*" hidden data-ph-file>
         </div>

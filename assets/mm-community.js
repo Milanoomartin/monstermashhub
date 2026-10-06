@@ -9,7 +9,7 @@
   const MM = window.MM;
   if (!MM || !MM.Cloud || !MM.Cloud.util) return;
   const C = MM.Cloud, U = C.util;
-  const { $, $$, esc, icon, img, thumb, avatar, badges, plural, ago, copy, run, toast, play, hydrate, stats, PERMS, SA_COLS, linkButtons, debounce } = U;
+  const { $, $$, esc, icon, img, thumb, avatar, acctImg, photoUrl, badges, plural, ago, copy, run, toast, play, hydrate, stats, PERMS, SA_COLS, linkButtons, debounce } = U;
   const KIND = { general: ['General', 'i-sparkle'], looking: ['Looking for', 'i-search'], offering: ['Offering', 'i-gift'], event: ['Event', 'i-calendar'], tip: ['Tip', 'i-bolt'] };
   const METRICS = { have: ['Stickers', 'have'], sets: ['Sets', 'sets'], star_total: ['Stars', 'star_total'], spares: ['Spares', 'spares'], prestige: ['Prestige', 'prestige'] };
 
@@ -21,6 +21,8 @@
     posts: async () => { const { data, error } = await C.sb.from('posts').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: false }).limit(100); if (error) throw error; return data; },
     board: async () => { const { data, error } = await C.sb.rpc('leaderboard', { stars: MM.ALL.map((s) => s.stars), lim: 300 }); if (error) throw error; return data; },
     albums: async () => { const { data, error } = await C.sb.from('shared_accounts').select(SA_COLS).eq('visibility', 'public').order('updated_at', { ascending: false }).limit(150); if (error) throw error; return data; },
+    // every account photo (moderators only; empty until supabase/migrations/001-account-photos.sql is run)
+    acctPhotos: async () => { const { data, error } = await C.sb.rpc('mod_account_photos', { lim: 300 }); return error ? [] : data || []; },
     photos: async () => { const { data, error } = await C.sb.from('profiles').select('id,username,display_name,avatar,avatar_url,created_at').order('created_at', { ascending: false }).limit(300); if (error) throw error; return data.filter((p) => p.avatar_url); },
     call: async (fn, args) => { const { data, error } = await C.sb.rpc(fn, args); if (error) throw error; return data; },
   };
@@ -34,7 +36,7 @@
       if (what === 'feed') { Com.posts = await api.posts(); await loadPeople(Com.posts.map((p) => p.author)); }
       if (what === 'board') Com.board = await api.board();
       if (what === 'albums') { Com.albums = await api.albums(); await loadPeople(Com.albums.map((a) => a.owner)); }
-      if (what === 'photos') Com.photos = await api.photos();
+      if (what === 'photos') { [Com.photos, Com.acctPhotos] = await Promise.all([api.photos(), api.acctPhotos()]); await loadPeople(Com.acctPhotos.map((a) => a.owner)); }
       Com.loaded[what] = Date.now();
     } catch (e) { toast(U.errMsg(e), 'error', '⚠️'); }
     if (MM.page === 'community') Com.render();
@@ -167,7 +169,7 @@
       <div class="seg cm-metrics">${Object.entries(METRICS).map(([k, [l]]) => `<button data-c="metric" data-m="${k}" class="${Com.metric === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       <div class="cm-board">${rows.length ? rows.map((r, k) => { const own = r.owner === C.user.id, v = r[key] || 0;
         return `<div class="cm-rank ${own ? 'me' : ''} ${k < 3 ? 'top top' + (k + 1) : ''}"><span class="cm-pos">${k < 3 ? ['🥇', '🥈', '🥉'][k] : k + 1}</span>
-          ${img(r.avatar, 'class="ava lg"')}<div class="cl-grow"><b>${esc(r.name)}</b>${r.prestige ? `<span class="pill gold">Prestige ${r.prestige}</span>` : ''}<small>${esc(r.display_name)} · @${esc(r.username || '')} ${badges(r.owner)}</small>
+          ${acctImg(r, 'class="ava lg"')}<div class="cl-grow"><b>${esc(r.name)}</b>${r.prestige ? `<span class="pill gold">Prestige ${r.prestige}</span>` : ''}<small>${esc(r.display_name)} · @${esc(r.username || '')} ${badges(r.owner)}</small>
           <div class="bar cm-bar"><i style="width:${((v / max) * 100).toFixed(1)}%"></i></div></div>
           <span class="cm-val"><b class="tnum">${v.toLocaleString()}</b><small>${METRICS[Com.metric][0].toLowerCase()}</small></span>
           ${r.is_public ? `<button class="btn xs" data-c="open" data-id="${r.account_id}">${icon('i-book', 'ico')}View</button>` : '<span class="pill" title="Private album — only totals are shown">Private</span>'}</div>`; }).join('')
@@ -181,7 +183,7 @@
     body.innerHTML = `<div class="spread" style="margin-bottom:10px"><p class="note">Albums their owners made public. Make yours public under Friends → My albums (or Settings).</p>
         <input class="input" id="cm-q" placeholder="Search albums or players" value="${esc(Com.q)}" style="max-width:280px"></div>
       <div class="cl-people">${list.length ? list.map((a) => { const s = stats(a.counts), o = P(a.owner);
-        return `<button class="card cm-album-card" data-c="open" data-id="${a.id}">${img(a.avatar, 'class="ava lg"')}<div class="cl-grow"><b>${esc(a.name)}</b><small>${esc(o.display_name)} · @${esc(o.username || '')}</small>
+        return `<button class="card cm-album-card" data-c="open" data-id="${a.id}">${acctImg(a, 'class="ava lg"')}<div class="cl-grow"><b>${esc(a.name)}</b><small>${esc(o.display_name)} · @${esc(o.username || '')}</small>
           <div class="bar cm-bar"><i style="width:${((s.have / MM.N) * 100).toFixed(1)}%"></i></div><small class="muted">${s.have}/${MM.N} · ${s.sets}/22 sets · ${s.spare} spares</small></div></button>`; }).join('')
         : `<div class="empty"><div class="big">${Com.loaded.albums ? 'No public albums yet' : 'Loading…'}</div></div>`}</div>`;
     const q = $('#cm-q'); if (q) q.oninput = debounce(() => { Com.q = q.value; const pos = q.selectionStart; tabAlbums(body); hydrate(body); const n = $('#cm-q'); n.focus(); n.setSelectionRange(pos, pos); }, 200);
@@ -199,7 +201,7 @@
     }).join('');
     const m = MM.modal({
       title: a.name, ico: 'i-book', size: 'wide',
-      body: `<div class="cm-album-head">${img(a.avatar, 'class="ava lg"')}<div class="cl-grow">${who(a.owner)}<div class="cm-stats"><span class="pill">${s.have}/${MM.N} stickers</span><span class="pill">${s.sets}/22 sets</span><span class="pill warn">${s.spare} spares</span>${a.prestige ? `<span class="pill gold">Prestige ${a.prestige}</span>` : ''}</div>${linkButtons(a.id)}</div>
+      body: `<div class="cm-album-head">${acctImg(a, 'class="ava lg"')}<div class="cl-grow">${who(a.owner)}<div class="cm-stats"><span class="pill">${s.have}/${MM.N} stickers</span><span class="pill">${s.sets}/22 sets</span><span class="pill warn">${s.spare} spares</span>${a.prestige ? `<span class="pill gold">Prestige ${a.prestige}</span>` : ''}</div>${linkButtons(a.id)}</div>
         ${!mine && !friend && !tour && o.username ? `<button class="btn sm primary" data-add="${esc(o.username)}">${icon('i-plus', 'ico')}Add friend</button>` : ''}</div>
         <div class="cm-sets">${sets}</div>`,
     });
@@ -228,7 +230,9 @@
           ${canProfiles ? `<button class="btn xs" data-c="fix-profile" data-id="${p.id}">${icon('i-edit', 'ico')}Name &amp; bio</button>` : ''}
           ${canPhotos && p.avatar_url ? `<button class="btn xs danger" data-c="rm-photo" data-id="${p.id}">${icon('i-trash', 'ico')}Remove photo</button>` : ''}</div>`; }).join('')}</div>` : ''}
       ${canPhotos ? `<div class="section-title">${icon('i-camera')} Profile photos <small>newest first</small></div>
-        <div class="cm-photos">${tour ? '<p class="note">Uploaded photos appear here for review.</p>' : Com.photos.length ? Com.photos.map((p) => `<div class="cm-photo"><img src="${esc(p.avatar_url)}" alt="" loading="lazy" referrerpolicy="no-referrer"><small>${esc(p.username ? '@' + p.username : p.display_name)}</small><button class="btn xs danger" data-c="rm-photo" data-id="${p.id}">Remove</button></div>`).join('') : `<p class="note">${Com.loaded.photos ? 'No uploaded photos.' : 'Loading…'}</p>`}</div>` : ''}`;
+        <div class="cm-photos">${tour ? '<p class="note">Uploaded photos appear here for review.</p>' : Com.photos.length ? Com.photos.map((p) => `<div class="cm-photo"><img src="${esc(p.avatar_url)}" alt="" loading="lazy" referrerpolicy="no-referrer"><small>${esc(p.username ? '@' + p.username : p.display_name)}</small><button class="btn xs danger" data-c="rm-photo" data-id="${p.id}">Remove</button></div>`).join('') : `<p class="note">${Com.loaded.photos ? 'No uploaded photos.' : 'Loading…'}</p>`}</div>
+        <div class="section-title">${icon('i-camera')} Account photos <small>album pictures, newest first</small></div>
+        <div class="cm-photos">${tour ? '<p class="note">Album pictures appear here for review.</p>' : (Com.acctPhotos || []).length ? Com.acctPhotos.map((a) => `<div class="cm-photo"><img src="${esc(photoUrl(a.photo_path))}" alt="" loading="lazy" referrerpolicy="no-referrer"><small>${esc(a.name)} · ${esc(nm(P(a.owner)))}</small><button class="btn xs danger" data-c="rm-acct-photo" data-id="${a.account_id}">Remove</button></div>`).join('') : `<p class="note">${Com.loaded.photos ? 'No account photos.' : 'Loading…'}</p>`}</div>` : ''}`;
     const f = $('#cm-find'); if (f) f.onkeydown = (e) => { if (e.key === 'Enter') findPlayers(); };
   }
   async function findPlayers() {
@@ -284,6 +288,15 @@
     m.$('[data-no]').onclick = m.close;
     m.$('[data-yes]').onclick = async (e) => { const ok = await run(e.target, () => api.call('mod_update_profile', { member: uid, new_display_name: m.$('#fp-name').value, new_bio: m.$('#fp-bio').value }), 'Profile updated'); if (ok) { m.close(); Com.people[uid] = { ...p, display_name: m.$('#fp-name').value, bio: m.$('#fp-bio').value }; Com.render(); } };
   }
+  async function removeAccountPhoto(id) {
+    const a = (Com.acctPhotos || []).find((x) => x.account_id === id); if (!a) return;
+    if (!(await MM.confirm('Remove account photo?', `Remove the picture on <b>${esc(a.name)}</b> (${esc(nm(P(a.owner)))})? It goes back to its Monster Mash icon.`, 'Remove', true))) return;
+    const ok = await run(null, async () => {
+      const path = await api.call('mod_clear_account_photo', { account: id });
+      if (path) { const r = await C.sb.storage.from('avatars').remove([path]); if (r.error) throw r.error; }
+    }, 'Photo removed');
+    if (ok) { Com.acctPhotos = Com.acctPhotos.filter((x) => x.account_id !== id); Com.albums.forEach((x) => { if (x.id === id) x.photo_path = null; }); Com.render(); C.refreshSoon && C.refreshSoon(); }
+  }
   async function removePhoto(uid) {
     const p = Com.photos.find((x) => x.id === uid) || (Com.found || []).find((x) => x.id === uid) || P(uid);
     if (!(await MM.confirm('Remove profile photo?', `Remove the photo of <b>${esc(nm(p))}</b>? They go back to a Monster Mash icon.`, 'Remove', true))) return;
@@ -328,5 +341,6 @@
     if (c === 'roles-of') rolesOf(id);
     if (c === 'fix-profile') fixProfile(id);
     if (c === 'rm-photo') removePhoto(id);
+    if (c === 'rm-acct-photo') removeAccountPhoto(id);
   }
 })();

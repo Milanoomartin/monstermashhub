@@ -59,6 +59,7 @@ begin
              'create_group_invite', 'join_group', 'join_public_group', 'invite_to_group', 'respond_group_invite', 'approve_group_member',
              'set_group_role', 'list_public_groups', 'trade_action', 'create_partnership', 'invite_to_partnership', 'respond_partnership',
              'approve_partner', 'create_role', 'update_role', 'delete_role', 'assign_role', 'mod_clear_avatar', 'mod_update_profile',
+             'mod_clear_account_photo', 'mod_account_photos',
              -- earlier versions
              'send_friend_request', 'join_space', 'join_public_space', 'rotate_space_code', 'list_public_spaces',
              'is_space_member', 'share_a_space', 'can_reach', 'account_in_my_spaces']))
@@ -175,6 +176,10 @@ create table public.shared_accounts (
   show_link      boolean not null default false,
   counts         int[] not null check (array_length(counts, 1) between 1 and 1000),
   prestige       int not null default 0 check (prestige between 0 and 1000),
+  -- the account's own picture: a file in the owner's folder of the "avatars" storage bucket
+  photo_path     text check (photo_path is null or (split_part(photo_path, '/', 1) = owner::text
+                   and photo_path ~ '^[0-9a-f-]{36}/acct-[A-Za-z0-9_-]{1,64}-[0-9]{1,16}\.(webp|png|jpg)$')),
+  photo_cleared  text check (photo_cleared is null or char_length(photo_cleared) <= 200), -- last photo a moderator removed
   updated_at     timestamptz not null default now(),
   unique (owner, local_id)
 );
@@ -813,14 +818,14 @@ $$;
 -- Community leaderboard: accounts whose owners opted in. stars = star value per sticker (from the app).
 create or replace function public.leaderboard(stars int[] default null, lim int default 200)
 returns table (account_id uuid, owner uuid, name text, avatar text, username text, display_name text, owner_avatar text, avatar_url text,
-               is_public boolean, have int, sets int, star_total int, spares int, prestige int, updated_at timestamptz)
+               is_public boolean, have int, sets int, star_total int, spares int, prestige int, updated_at timestamptz, photo_path text)
 language sql stable security definer set search_path = '' as $$
   select a.id, a.owner, a.name, a.avatar, p.username, p.display_name, p.avatar, p.avatar_url, a.visibility = 'public',
     (select count(*)::int from unnest(a.counts) c where c > 0),
     (select count(*)::int from (select (o - 1) / 9 as s, count(*) filter (where c > 0) as n from unnest(a.counts) with ordinality u(c, o) group by 1) q where q.n = 9),
     coalesce((select sum(case when u.c > 0 then coalesce(stars[u.o::int], 0) else 0 end)::int from unnest(a.counts) with ordinality u(c, o)), 0),
     (select coalesce(sum(greatest(c - 1, 0)), 0)::int from unnest(a.counts) c),
-    a.prestige, a.updated_at
+    a.prestige, a.updated_at, a.photo_path
   from public.shared_accounts a join public.profiles p on p.id = a.owner
   where a.on_leaderboard and p.leaderboard and auth.uid() is not null
   order by 14 desc, 10 desc, 15 asc
@@ -1159,6 +1164,29 @@ begin
   update public.profiles set avatar_url = null where id = member;
 end $$;
 
+-- Account photos: moderators can list every one (private albums included) and remove any.
+create or replace function public.mod_account_photos(lim int default 300)
+returns table (account_id uuid, owner uuid, name text, photo_path text, updated_at timestamptz)
+language plpgsql stable security definer set search_path = '' as $$
+begin
+  if not public.has_perm(public.mm_me(), 'moderate_avatars') then raise exception 'You cannot moderate photos'; end if;
+  return query select a.id, a.owner, a.name, a.photo_path, a.updated_at from public.shared_accounts a
+    where a.photo_path is not null order by a.updated_at desc limit least(greatest(coalesce(lim, 300), 1), 1000);
+end $$;
+
+-- Returns the removed file's path so the moderator's app can delete it from Storage.
+create or replace function public.mod_clear_account_photo(account uuid) returns text
+language plpgsql security definer set search_path = '' as $$
+declare me uuid := public.mm_me(); old text;
+begin
+  if not public.has_perm(me, 'moderate_avatars') then raise exception 'You cannot moderate photos'; end if;
+  select photo_path into old from public.shared_accounts where id = account;
+  if old is not null then
+    update public.shared_accounts set photo_path = null, photo_cleared = old where id = account;
+  end if;
+  return old;
+end $$;
+
 create or replace function public.mod_update_profile(member uuid, new_display_name text, new_bio text) returns void
 language plpgsql security definer set search_path = '' as $$
 declare me uuid := public.mm_me();
@@ -1206,7 +1234,8 @@ begin
              'add_friend', 'respond_friend_request', 'rotate_account_token', 'account_links', 'leaderboard', 'find_players',
              'create_group_invite', 'join_group', 'join_public_group', 'invite_to_group', 'respond_group_invite', 'approve_group_member',
              'set_group_role', 'list_public_groups', 'trade_action', 'create_partnership', 'invite_to_partnership', 'respond_partnership',
-             'approve_partner', 'create_role', 'update_role', 'delete_role', 'assign_role', 'mod_clear_avatar', 'mod_update_profile')) loop
+             'approve_partner', 'create_role', 'update_role', 'delete_role', 'assign_role', 'mod_clear_avatar', 'mod_update_profile',
+             'mod_clear_account_photo', 'mod_account_photos')) loop
     execute format('revoke all on function %s from public, anon, authenticated', f.sig);
     if f.proname not like 'mm\_\_%' then
       execute format('grant execute on function %s to authenticated', f.sig);

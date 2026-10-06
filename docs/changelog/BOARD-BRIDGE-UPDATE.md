@@ -30,3 +30,13 @@
 - Moderators (`moderate_avatars`) get an **Account photos** list under Community → Staff, private albums included, and can remove any. A removed picture is not uploaded again, but a new one is.
 - Works before the migration too: albums just keep their icon until it's run.
 - Schema tests: 147 checks, including the migration over an older database with data. Service worker `v20-account-photos`.
+
+## Album Bridge 1.2.0
+- Fixed: album capture failed with "names is not a function". A local list of player names was hiding the sticker-name helper, which is now `cardNames`.
+- Lint clean: `cloneInto` and `exportFunction` are declared as Firefox globals, and no arrow function returns an assignment.
+- **One-click board import:** the Board Builder's **Calculate on wiki & import** button (shown once a board name and number are filled in) opens the MOGO Wiki calculator with `#mmhub={map, name, levels, bash, account}`. The part after `#` never leaves the browser. The script:
+  - types the map number and board name, and picks the exact board ("Sydney" never matches "Sydney Nights"),
+  - sets Builder's Bash and presses CALCULATE at level 0 so every price is seen,
+  - sets your landmark levels and sends the costs to the Hub.
+
+  The Hub review opens with the right account already selected. If the board can't be found, it explains why and offers Try again.

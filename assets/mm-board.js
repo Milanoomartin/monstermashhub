@@ -104,16 +104,21 @@
   };
   B.open = function (aid) { this.aid = aid; this.preview = null; MM.go('board'); };
 
-  B.wikiLink = function (b) {
+  /** With a board name and number, the Album Bridge (1.2+) reads the #mmhub part on the wiki, fills
+      in the board, presses CALCULATE, sets these levels and sends the costs back — one click. The part
+      after # never leaves the browser. */
+  B.oneClick = (b) => !!(b.map && b.name);
+  B.wikiLink = function (b, aid) {
     const p = new URLSearchParams();
     if (b.map) p.set('map_number', b.map);
     if (b.costs && !stale(b)) {
       p.set('board_key', b.costs.key);
-      p.set('landmark_levels', JSON.stringify(Object.fromEntries(landmarks(b).map((l) => [l.key, clampLv(b.levels[l.key])]))));
+      if (!this.oneClick(b)) p.set('landmark_levels', JSON.stringify(Object.fromEntries(landmarks(b).map((l) => [l.key, clampLv(b.levels[l.key])]))));
     }
     if (b.bash) p.set('builders_bash', '1');
     const q = p.toString();
-    return WIKI + (q ? '?' + q : '');
+    const job = this.oneClick(b) ? '#mmhub=' + encodeURIComponent(JSON.stringify({ v: 1, map: b.map, name: b.name, bash: !!b.bash, aid: aid || '', levels: landmarks(b).map((l) => clampLv(b.levels[l.key])) })) : '';
+    return WIKI + (q ? '?' + q : '') + job;
   };
 
   function lmCard(b, r, preview) {
@@ -168,7 +173,7 @@
             </div>
             ${stale(b) ? `<p class="bd-warn">These costs belong to <b>${esc(b.costs.name)} #${b.costs.map}</b>. Import your new board from the wiki to update them.</p>` : ''}
             <div class="row bd-actions">
-              <a class="btn primary sm" href="${esc(this.wikiLink(b))}" target="_blank" rel="noopener">${icon('i-link', 'ico')}Open wiki calculator</a>
+              <a class="btn primary sm" href="${esc(this.wikiLink(b, a.id))}" target="_blank" rel="noopener" title="${this.oneClick(b) ? 'With the Album Bridge installed, the wiki fills in this board, calculates, sets your levels and sends the costs back here.' : 'Add the board name and number for one-click import.'}">${icon('i-link', 'ico')}${this.oneClick(b) ? 'Calculate on wiki &amp; import' : 'Open wiki calculator'}</a>
               <label class="switch"><input type="checkbox" id="bd-bash" ${b.bash ? 'checked' : ''}><span class="knob"></span><span style="font-weight:800">Builder's Bash</span></label>
               ${b.costs ? `<button class="btn ghost sm" data-x="clear">${icon('i-broom', 'ico')}Clear costs</button>` : ''}
             </div>
@@ -209,9 +214,9 @@
         : `<p class="note">Type how much cash you have — like <b>450B</b> or <b>1.2T</b> — to plan your next builds.</p>`}`
         : `<div class="bd-howto"><b>How to import costs</b><ol>
             <li>Install the free <a href="#" data-x="guide">Album Bridge</a> userscript (one time).</li>
-            <li>Tap <b>Open wiki calculator</b> above. Your board number is filled in for you.</li>
-            <li>Pick your board, press <b>CALCULATE</b> and set your landmark levels.</li>
-            <li>Press <b>Send board to Hub</b> and come back here to review it.</li></ol></div>`}
+            <li>Type your <b>board name</b> and <b>board number</b> above (or send them from your Tycoon profile).</li>
+            <li>Tap <b>Calculate on wiki &amp; import</b>. The wiki fills in your board, calculates, sets your landmark levels and sends the costs back by itself.</li>
+            <li>Come back to this tab and confirm the review.</li></ol></div>`}
       </div>`;
     MM.Art.hydrate(page);
     this.wire(page, a);

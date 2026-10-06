@@ -52,7 +52,7 @@
       id: p.id, kind: 'board', at: Number.isFinite(p.capturedAt) ? Math.min(p.capturedAt, Date.now()) : Date.now(),
       map: p.map, key: str(p.key, 60) || 'board', name: str(p.name, 60) || str(p.key, 60), group: str(p.group, 60),
       rollEv: Number.isFinite(+p.rollEv) && +p.rollEv > 0 ? +p.rollEv : 0, totalRolls: Number.isFinite(+p.totalRolls) && +p.totalRolls > 0 ? Math.round(+p.totalRolls) : 0,
-      bash: !!p.bash, landmarks,
+      bash: !!p.bash, landmarks, hint: /^[\w-]{1,64}$/.test(p.hint || '') ? p.hint : '',
       imgBase: WIKI_IMG.test(p.imgBase || '') ? p.imgBase : '', maquette: WIKI_IMG.test(p.maquette || '') && /\.png$/i.test(p.maquette) ? p.maquette : '',
     };
   }
@@ -66,7 +66,8 @@
   }
   function guessBoard(c) {
     const list = own();
-    const hit = list.find((a) => a.board && +a.board.map === c.map && normName(a.board.name) === normName(c.name))
+    if (c.hint && list.some((a) => a.id === c.hint)) return c.hint; // sent from that account's Board page
+    const hit =list.find((a) => a.board && +a.board.map === c.map && normName(a.board.name) === normName(c.name))
       || list.find((a) => a.mogo && a.mogo.board && a.mogo.board.map === c.map && normName(a.mogo.board.name) === normName(c.name))
       || list.find((a) => a.board && +a.board.map === c.map);
     if (hit) return hit.id;
@@ -264,7 +265,7 @@
         ${step(3, 'Open your official album', `<p>Go to <a href="${OFFICIAL}" target="_blank" rel="noopener">monopolygo.com/sticker-album</a> and sign in. A purple <b>✦ Album Bridge</b> button appears at the top right. Drag it anywhere.</p>`, ['assets/bridge/step-official-album.webp', 'The ✦ Album Bridge button on the official album page'])}
         ${step(4, 'Capture & send', `<p>Press <b>Album Bridge</b>, check the totals, then <b>Capture &amp; send to Hub</b>. It reads all 22 sets, including missing stickers and “+3” duplicate badges, plus your profile picture and frame.</p>`, ['assets/bridge/step-capture.webp', 'The capture screen shows owned, missing and duplicate counts before sending'])}
         ${step(5, 'Review in the Hub', `<p>Back in the Hub, the review opens by itself. Pick the account, compare old and new counts set by set, adjust anything by hand, then <b>Confirm update</b>. Changed your mind? <b>Undo last bridge import</b> puts the old counts back.</p>`)}
-        ${step(6, 'Profile, board & costs', `<p>On your <a href="${PROFILE}" target="_blank" rel="noopener">Tycoon profile</a>, press <b>Send profile to Hub</b> for your picture, level and board. For costs, open the <a href="#" data-x="board">Board Builder</a>, tap <b>Open wiki calculator</b>, press <b>CALCULATE</b>, then <b>Send board to Hub</b>. The Hub asks which account each one belongs to.</p>`)}
+        ${step(6, 'Profile, board & costs', `<p>On your <a href="${PROFILE}" target="_blank" rel="noopener">Tycoon profile</a>, press <b>Send profile to Hub</b> for your picture, level and board. For costs, open the <a href="#" data-x="board">Board Builder</a> and tap <b>Calculate on wiki &amp; import</b>. The wiki tab fills in your board name and number, presses CALCULATE, sets your landmark levels and sends everything back in one go. Return to the Hub to confirm.</p>`)}
       </ol>
 
       <div class="br-two">

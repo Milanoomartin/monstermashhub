@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Monster Mash Album Bridge
 // @namespace    monster-mash-album-bridge
-// @version      1.1.0
+// @version      1.2.0
 // @description  Capture your official Monster Mash album, profile picture, frame and board, plus board-upgrade costs from the MOGO Wiki calculator. Review everything in the Monster Mash Hub before it saves.
 // @author       Monster Mash Hub (fan-made)
 // @homepageURL  https://milanoomartin.github.io/monstermashhub/#bridge
@@ -24,6 +24,7 @@
 // @noframes
 // ==/UserScript==
 
+/* global cloneInto, exportFunction */ // Firefox-only helpers, checked with typeof before use
 (() => {
   'use strict';
   const SETS = [{"id":1,"name":"Community Gallery","color":"#9A5C38","stickers":[{"name":"Woodland Whispers","hubName":"Woodland Whispers","stars":1,"gold":false},{"name":"Kute Krampus","hubName":"Kute Krampus","stars":1,"gold":false},{"name":"Gentlewulf","hubName":"Gentlewulf","stars":1,"gold":false},{"name":"Patchwork","hubName":"Patchwork","stars":1,"gold":false},{"name":"Neck of the Woods","hubName":"Neck of the Woods","stars":1,"gold":false},{"name":"Glam-O-Crow","hubName":"Glam-O-Crow","stars":1,"gold":false},{"name":"Harlequin Queen","hubName":"Harlequin Queen","stars":1,"gold":false},{"name":"Screaming Clown","hubName":"Screaming Clown","stars":1,"gold":false},{"name":"Just a Zombie","hubName":"Just a Zombie","stars":1,"gold":false}]},{"id":2,"name":"Welcome To The Mansion","color":"#E67D2B","stickers":[{"name":"Mystery Mansion","hubName":"Mystery Mansion","stars":1,"gold":false},{"name":"At The Gates","hubName":"At The Gates","stars":1,"gold":false},{"name":"Master Key","hubName":"Master Key","stars":1,"gold":false},{"name":"The Other Side","hubName":"The Other Side","stars":1,"gold":false},{"name":"Hall O' Frame","hubName":"Hall O' Frame","stars":1,"gold":false},{"name":"House Call","hubName":"House Call","stars":1,"gold":false},{"name":"HUNTR/X","hubName":"HUNTR/X","stars":1,"gold":false},{"name":"Ghostly Guide","hubName":"Ghostly Guide","stars":1,"gold":false},{"name":"Places Unknown","hubName":"Places Unknown","stars":1,"gold":false}]},{"id":3,"name":"Dracula","color":"#ED5A69","stickers":[{"name":"Enter Dracula","hubName":"Enter Dracula","stars":1,"gold":false},{"name":"On Reflection","hubName":"On Reflection","stars":1,"gold":false},{"name":"Long in the Tooth","hubName":"Long in the Tooth","stars":1,"gold":false},{"name":"Day in the Sun","hubName":"Day in the Sun","stars":1,"gold":false},{"name":"Down for the Count","hubName":"Down for the Count","stars":1,"gold":false},{"name":"Heart Stopper","hubName":"Heart Stopper","stars":1,"gold":false},{"name":"Cloak Conundrum","hubName":"Cloak Conundrum","stars":2,"gold":false},{"name":"Prince of Darkness","hubName":"Prince of Darkness","stars":2,"gold":false},{"name":"Disco Drac","hubName":"Disco Drac","stars":2,"gold":false}]},{"id":4,"name":"Lurid Labs","color":"#E18D27","stickers":[{"name":"The Laboratory","hubName":"The Laboratory","stars":1,"gold":false},{"name":"Flip the Switch","hubName":"Flip the Switch","stars":1,"gold":false},{"name":"Pet Project","hubName":"Pet Project","stars":1,"gold":false},{"name":"Jealousy & Pride","hubName":"Jealousy & Pride","stars":2,"gold":false},{"name":"Mad for Science","hubName":"Mad for Science","stars":2,"gold":false},{"name":"The Conductor","hubName":"The Conductor","stars":2,"gold":false},{"name":"Ghost Trap","hubName":"Ghost Trap","stars":2,"gold":false},{"name":"Gone Ghoul","hubName":"Gone Ghoul","stars":2,"gold":false},{"name":"Slimed","hubName":"Slimed","stars":2,"gold":false}]},{"id":5,"name":"Grim Gardens","color":"#B045B6","stickers":[{"name":"Ghouly Greens","hubName":"Ghouly Greens","stars":2,"gold":false},{"name":"Ghost Plant","hubName":"Ghost Plant","stars":2,"gold":false},{"name":"Green Thumb","hubName":"Green Thumb","stars":2,"gold":false},{"name":"Creeper Vine","hubName":"Creeper Vine","stars":2,"gold":false},{"name":"Try, Try Again","hubName":"Try, Try Again","stars":2,"gold":false},{"name":"Botanical Bogey","hubName":"Botanical Bogey","stars":2,"gold":false},{"name":"Heady Choices","hubName":"Heady Choices","stars":2,"gold":false},{"name":"Dirt Nap","hubName":"Dirt Nap","stars":2,"gold":false},{"name":"BOO-quet","hubName":"BOO-quet","stars":2,"gold":false}]},{"id":6,"name":"Wolfie","color":"#449595","stickers":[{"name":"Enter Wolfie","hubName":"Enter Wolfie","stars":2,"gold":false},{"name":"Family Pack","hubName":"Family Pack","stars":2,"gold":false},{"name":"Fetch!","hubName":"Fetch!","stars":2,"gold":false},{"name":"I Beg You","hubName":"I Beg You","stars":2,"gold":false},{"name":"Beast in Show","hubName":"Beast in Show","stars":2,"gold":false},{"name":"Call of the Wild","hubName":"Call of the Wild","stars":2,"gold":false},{"name":"Fine Canines","hubName":"Fine Canines","stars":2,"gold":false},{"name":"Howl N' Prowl","hubName":"Howl N' Prowl","stars":2,"gold":false},{"name":"Luna's Flea Bath","hubName":"Luna's Flea Bath","stars":2,"gold":false}]},{"id":7,"name":"Sleepless Night","color":"#4F8261","stickers":[{"name":"Blighted Bedroom","hubName":"Blighted Bedroom","stars":2,"gold":false},{"name":"Ghost Story","hubName":"Ghost Story","stars":2,"gold":false},{"name":"Clowned","hubName":"Clowned","stars":2,"gold":false},{"name":"Demonic Disguise","hubName":"Demonic Disguise","stars":2,"gold":false},{"name":"Going Batty","hubName":"Going Batty","stars":2,"gold":false},{"name":"Safety First","hubName":"Safety First","stars":2,"gold":false},{"name":"Chair Raising","hubName":"Chair Raising","stars":2,"gold":false},{"name":"Mystery Solved","hubName":"Mystery Solved","stars":3,"gold":false},{"name":"Boogey Boo!","hubName":"Boogey Boo!","stars":3,"gold":false}]},{"id":8,"name":"Ms. Frankenstein","color":"#9E84B9","stickers":[{"name":"Enter Undead Diva","hubName":"Enter Undead Diva","stars":2,"gold":false},{"name":"Study Buddy","hubName":"Study Buddy","stars":2,"gold":false},{"name":"Inspiration Strikes!","hubName":"Inspiration Strikes!","stars":2,"gold":false},{"name":"Made for This","hubName":"Made for This","stars":2,"gold":false},{"name":"Thunderhead","hubName":"Thunderhead","stars":2,"gold":false},{"name":"Stormy Skies","hubName":"Stormy Skies","stars":2,"gold":false},{"name":"At First Sight","hubName":"At First Sight","stars":3,"gold":false},{"name":"Strike a Pose","hubName":"Strike a Pose","stars":3,"gold":false},{"name":"I Do!","hubName":"I Do!","stars":3,"gold":false}]},{"id":9,"name":"Halloween Games","color":"#438147","stickers":[{"name":"Game On!","hubName":"Game On!","stars":2,"gold":false},{"name":"Takedown","hubName":"Takedown","stars":2,"gold":false},{"name":"Nice Bob!","hubName":"Nice Bob!","stars":2,"gold":false},{"name":"Stuck in Limbo","hubName":"Stuck in Limbo","stars":2,"gold":false},{"name":"Feet of Strength","hubName":"Feet of Strength","stars":3,"gold":false},{"name":"Sugar Rush","hubName":"Sugar Rush","stars":3,"gold":false},{"name":"Deadly Aim","hubName":"Deadly Aim","stars":3,"gold":false},{"name":"The Ringer","hubName":"The Ringer","stars":3,"gold":false},{"name":"Snack Attack","hubName":"Snack Attack","stars":3,"gold":false}]},{"id":10,"name":"The Mummy","color":"#E5A008","stickers":[{"name":"Enter Rags","hubName":"Enter Rags","stars":2,"gold":false},{"name":"Bugging Out","hubName":"Bugging Out","stars":2,"gold":false},{"name":"Curses!","hubName":"Curses!","stars":3,"gold":false},{"name":"Pyramid Scheme","hubName":"Pyramid Scheme","stars":3,"gold":false},{"name":"That's a Wrap!","hubName":"That's a Wrap!","stars":3,"gold":false},{"name":"Cryptic","hubName":"Cryptic","stars":3,"gold":false},{"name":"Preserves","hubName":"Preserves","stars":3,"gold":false},{"name":"Tomb Boy","hubName":"Tomb Boy","stars":3,"gold":false},{"name":"Walk This Way","hubName":"Walk This Way","stars":3,"gold":false}]},{"id":11,"name":"The Swamp Monster","color":"#9C543F","stickers":[{"name":"Enter Swampie","hubName":"Enter Swampie","stars":2,"gold":false},{"name":"Ugly Muckling","hubName":"Ugly Muckling","stars":3,"gold":false},{"name":"Swamp Hang","hubName":"Swamp Hang","stars":3,"gold":false},{"name":"Marsh Mellow","hubName":"Marsh Mellow","stars":3,"gold":false},{"name":"Top Underling","hubName":"Top Underling","stars":3,"gold":false},{"name":"Swamped","hubName":"Swamped","stars":3,"gold":false},{"name":"Exit Strategy","hubName":"Exit Strategy","stars":3,"gold":false},{"name":"Swampie","hubName":"Swampie","stars":3,"gold":false},{"name":"Boggy Nights","hubName":"Boggy Nights","stars":4,"gold":false}]},{"id":12,"name":"Evil Deeds","color":"#5F5FAB","stickers":[{"name":"Witchy Wood","hubName":"Witchy Wood","stars":3,"gold":false},{"name":"Unamusement Park","hubName":"Unamusement Park","stars":3,"gold":false},{"name":"Soggy Bayou","hubName":"Soggy Bayou","stars":3,"gold":false},{"name":"Shrieking Shores","hubName":"Shrieking Shores","stars":3,"gold":false},{"name":"550 Central Park West","hubName":"550 Central Park West","stars":3,"gold":false},{"name":"MGO Mausoleum","hubName":"MGO Mausoleum","stars":3,"gold":false},{"name":"The Demon World","hubName":"The Demon World","stars":3,"gold":false},{"name":"Cabin in the Woods","hubName":"Cabin in the Woods","stars":4,"gold":false},{"name":"Dracula's Castle","hubName":"Dracula's Castle","stars":4,"gold":false}]},{"id":13,"name":"The Zombie","color":"#7C854B","stickers":[{"name":"Enter Shambles","hubName":"Enter Shambles","stars":3,"gold":false},{"name":"Early Riser","hubName":"Early Riser","stars":3,"gold":false},{"name":"Brain Rot","hubName":"Brain Rot","stars":3,"gold":false},{"name":"Brain Food","hubName":"Brain Food","stars":3,"gold":false},{"name":"A Beautiful Mind","hubName":"A Beautiful Mind","stars":3,"gold":false},{"name":"Brainiac","hubName":"Brainiac","stars":3,"gold":false},{"name":"One Man's Trash","hubName":"One Man's Trash","stars":4,"gold":false},{"name":"Fresh to Death","hubName":"Fresh to Death","stars":4,"gold":false},{"name":"Bashful Monster","hubName":"Bashful Monster","stars":4,"gold":true}]},{"id":14,"name":"The Ghost","color":"#4E97D9","stickers":[{"name":"Enter Godfrey","hubName":"Enter Godfrey","stars":3,"gold":false},{"name":"King of Swing","hubName":"King of Swing","stars":3,"gold":false},{"name":"Sing Along","hubName":"Sing Along","stars":3,"gold":false},{"name":"Creepy Cameo","hubName":"Creepy Cameo","stars":3,"gold":false},{"name":"Fridge Raider","hubName":"Fridge Raider","stars":3,"gold":false},{"name":"Chilling","hubName":"Chilling","stars":4,"gold":false},{"name":"Clear Reading","hubName":"Clear Reading","stars":4,"gold":false},{"name":"Fudged","hubName":"Fudged","stars":4,"gold":true},{"name":"Thrown Off","hubName":"Thrown Off","stars":5,"gold":false}]},{"id":15,"name":"The Witch","color":"#58A97B","stickers":[{"name":"Enter Hexie","hubName":"Enter Hexie","stars":3,"gold":false},{"name":"Familiar Face","hubName":"Familiar Face","stars":3,"gold":false},{"name":"Miss Spelled","hubName":"Miss Spelled","stars":3,"gold":false},{"name":"At Your Service","hubName":"At Your Service","stars":4,"gold":false},{"name":"Monstrous Mix-Ins","hubName":"Monstrous Mix-Ins","stars":4,"gold":false},{"name":"Hat Trick","hubName":"Hat Trick","stars":4,"gold":false},{"name":"Buckle Up","hubName":"Buckle Up","stars":4,"gold":true},{"name":"Witching Hour","hubName":"Witching Hour","stars":5,"gold":false},{"name":"Stir Crazy","hubName":"Stir Crazy","stars":5,"gold":false}]},{"id":16,"name":"Ghastly Garage","color":"#A56AB0","stickers":[{"name":"The Lock-Up","hubName":"The Lock-Up","stars":3,"gold":false},{"name":"Stay Golden","hubName":"Stay Golden","stars":3,"gold":false},{"name":"Wolfie Wagon","hubName":"Wolfie Wagon","stars":4,"gold":false},{"name":"Rags' Roadster","hubName":"Rags' Roadster","stars":4,"gold":false},{"name":"Long-Term Parking","hubName":"Long-Term Parking","stars":4,"gold":false},{"name":"Franken-Coach","hubName":"Franken-Coach","stars":4,"gold":false},{"name":"High Beams","hubName":"High Beams","stars":4,"gold":true},{"name":"Drac's Dragster","hubName":"Drac's Dragster","stars":5,"gold":false},{"name":"Ecto-1","hubName":"Ecto-1","stars":5,"gold":true}]},{"id":17,"name":"Boogie Bash","color":"#C54A67","stickers":[{"name":"DJ Spinner","hubName":"DJ Spinner","stars":4,"gold":false},{"name":"Dance Idols","hubName":"Dance Idols","stars":4,"gold":false},{"name":"Do The Worm","hubName":"Do The Worm","stars":4,"gold":false},{"name":"Shredding","hubName":"Shredding","stars":4,"gold":false},{"name":"Electric BOO-galoo","hubName":"Electric BOO-galoo","stars":4,"gold":true},{"name":"Wall Flowers","hubName":"Wall Flowers","stars":4,"gold":true},{"name":"Punchline","hubName":"Punchline","stars":5,"gold":false},{"name":"To Be Free","hubName":"To Be Free","stars":5,"gold":true},{"name":"Monster Mosh","hubName":"Monster Mosh","stars":6,"gold":false}]},{"id":18,"name":"The Attic","color":"#4C62A7","stickers":[{"name":"Up the Hatch","hubName":"Up the Hatch","stars":4,"gold":false},{"name":"Derpy Statue","hubName":"Derpy Statue","stars":4,"gold":false},{"name":"Ghostly Glow","hubName":"Ghostly Glow","stars":4,"gold":false},{"name":"Be a Doll","hubName":"Be a Doll","stars":4,"gold":true},{"name":"Mr. Mannequin","hubName":"Mr. Mannequin","stars":4,"gold":true},{"name":"Miss Mary","hubName":"Miss Mary","stars":5,"gold":false},{"name":"Hats Off to Ya","hubName":"Hats Off to Ya","stars":5,"gold":false},{"name":"The Watcher","hubName":"The Watcher","stars":5,"gold":true},{"name":"Tea Time","hubName":"Tea Time","stars":6,"gold":false}]},{"id":19,"name":"Trick Or Treat","color":"#DC6C2A","stickers":[{"name":"Hit the Streets","hubName":"Hit the Streets","stars":4,"gold":false},{"name":"Sweet!","hubName":"Sweet!","stars":4,"gold":false},{"name":"Chief Suspect","hubName":"Chief Suspect","stars":4,"gold":true},{"name":"Seen a Ghost?","hubName":"Seen a Ghost?","stars":4,"gold":true},{"name":"Snack Run","hubName":"Snack Run","stars":5,"gold":false},{"name":"Adorned","hubName":"Adorned","stars":5,"gold":false},{"name":"Triple Treat","hubName":"Triple Treat","stars":5,"gold":true},{"name":"Fit Check","hubName":"Fit Check","stars":5,"gold":true},{"name":"All Haul-O's Eve","hubName":"All Haul-O's Eve","stars":6,"gold":false}]},{"id":20,"name":"Frankie Fun","color":"#55C3B7","stickers":[{"name":"Enter Frankie","hubName":"Enter Frankie","stars":4,"gold":false},{"name":"Compact","hubName":"Compact","stars":4,"gold":true},{"name":"Body Builder","hubName":"Body Builder","stars":4,"gold":true},{"name":"Unstoppable","hubName":"Unstoppable","stars":5,"gold":false},{"name":"Key To Happiness","hubName":"Key To Happiness","stars":5,"gold":false},{"name":"Like a Glove","hubName":"Like a Glove","stars":5,"gold":false},{"name":"The Groom","hubName":"The Groom","stars":5,"gold":true},{"name":"Self Made Man","hubName":"Self Made Man","stars":5,"gold":true},{"name":"Supportive","hubName":"Supportive","stars":6,"gold":false}]},{"id":21,"name":"Who You Gonna Call?","color":"#965750","stickers":[{"name":"Shh!","hubName":"Shh!","stars":4,"gold":false},{"name":"Off the Charts","hubName":"Off the Charts","stars":4,"gold":true},{"name":"The Pole Works!","hubName":"The Pole Works!","stars":4,"gold":true},{"name":"Goo Crew","hubName":"Goo Crew","stars":5,"gold":false},{"name":"We Have the Tools","hubName":"We Have the Tools","stars":5,"gold":false},{"name":"Terrace Terror","hubName":"Terrace Terror","stars":5,"gold":true},{"name":"S'more Heat","hubName":"S'more Heat","stars":5,"gold":true},{"name":"I Love This Town!","hubName":"I Love This Town!","stars":5,"gold":true},{"name":"Big Town Heroes","hubName":"Big Town Heroes","stars":6,"gold":false}]},{"id":22,"name":"Demons & Hunters","color":"#DB3D77","stickers":[{"name":"How It's Done","hubName":"How It's Done","stars":4,"gold":true},{"name":"Golden","hubName":"Golden","stars":4,"gold":true},{"name":"Newcomers","hubName":"Newcomers","stars":5,"gold":false},{"name":"Easy on the Eyes","hubName":"Easy on the Eyes","stars":5,"gold":false},{"name":"Soda Pop","hubName":"Soda Pop","stars":5,"gold":true},{"name":"Hello, Friend","hubName":"Hello, Friend","stars":5,"gold":true},{"name":"Torn","hubName":"Torn","stars":5,"gold":true},{"name":"Voices Strong","hubName":"Voices Strong","stars":5,"gold":true},{"name":"Couch! Couch! Couch!","hubName":"Couch! Couch! Couch!","alt":["Cough! Cough! Cough!"],"stars":6,"gold":false}]}];
@@ -31,12 +32,12 @@
   const HUB = 'https://milanoomartin.github.io/monstermashhub/';
   const OFFICIAL = 'https://www.monopolygo.com/sticker-album';
   const KEY = 'mmab.pending.v1', BACKUP = 'mmab.undo.v1', LINKS = 'mmab.links.v1', EXTRAS = 'mmab.extras.v1';
-  const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.0';
+  const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.0';
   const isHub = location.origin === 'https://milanoomartin.github.io';
   const isWiki = location.hostname === 'monopolygo.wiki';
   const CALC_PATH = '/mogo-tools/board-upgrade-calculator';
   const page = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-  const names = c => [c.name, c.hubName, ...(c.alt || [])];
+  const cardNames = c => [c.name, c.hubName, ...(c.alt || [])];
   const norm = s => String(s || '').normalize('NFKC').trim().toLocaleLowerCase('en-US').replace(/\s+/g,' ');
   const stickerNorm = s => norm(s).replace(/[’‘]/g,"'").replace(/[^a-z0-9]/g,'');
   const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -59,7 +60,7 @@
       if (!expected || +m[2] < 1 || +m[2] > 22 || +m[3] < 1 || +m[3] > 9) throw Error('Unsupported set or sticker position. Nothing was captured.');
       const missing = el.querySelector('[class*="_sticker-card-missing-name_"]');
       const title = missing || el.querySelector('[class*="_sticker-card-ribbon-name_"]');
-      if (!title || !names(expected).some(n=>stickerNorm(n)===stickerNorm(title.textContent))) throw Error(`Sticker name did not match set ${m[2]}, position ${m[3]}. Use the official site in English and reload.`);
+      if (!title || !cardNames(expected).some(n=>stickerNorm(n)===stickerNorm(title.textContent))) throw Error(`Sticker name did not match set ${m[2]}, position ${m[3]}. Use the official site in English and reload.`);
       const ownedImage = el.querySelector('img[class*="_sticker-card-image_"]');
       const badges = [...el.querySelectorAll('[class*="_sticker-card-count_"]')];
       let count;
@@ -96,7 +97,7 @@
     if (mm.S.frozen) throw Error('Exit the Hub tutorial before importing.');
     for(const c of CARDS) {
       const h=mm.ALL[c.i];
-      if(h.i!==c.i || h.setId!==c.setId || h.n!==c.n || h.stars!==c.stars || !!h.gold!==c.gold || !names(c).some(n=>stickerNorm(n)===stickerNorm(h.name))) throw Error(`The Hub catalog differs at set ${c.setId}, sticker ${c.n}. Update Album Bridge before importing.`);
+      if(h.i!==c.i || h.setId!==c.setId || h.n!==c.n || h.stars!==c.stars || !!h.gold!==c.gold || !cardNames(c).some(n=>stickerNorm(n)===stickerNorm(h.name))) throw Error(`The Hub catalog differs at set ${c.setId}, sticker ${c.n}. Update Album Bridge before importing.`);
     }
     if (mm.Cloud?.pulling || (mm.Cloud?.configured && (!mm.Cloud.user || !mm.Cloud.loaded))) throw Error('Sign in to the Hub and wait for cloud sync to finish, then reopen this review.');
     return mm;
@@ -209,7 +210,7 @@
   }
 
   /* ---------- MOGO Wiki board calculator: watch the costs the page itself loads ---------- */
-  const calcCache=new Map();let lastCalc=null;
+  const calcCache=new Map();let lastCalc=null,calcSeen=0;
   function hookWiki(){
     if(!isWiki)return;
     const original=page.fetch;
@@ -240,7 +241,7 @@
       return {key:/^[\w-]{1,40}$/.test(l.landmark_key||'')?l.landmark_key:'landmark_'+(k+1),level:Math.max(0,Math.min(6,l.current_level|0)),costs};
     });
     lastCalc={map:j.map_number,key:j.board.board_key.slice(0,60),name:tidy(j.board.name||j.board.board_key).slice(0,60),art:String(j.board.art_key||''),group:String(j.group_key||req.group_key||'').slice(0,60),rollEv:+(j.economy&&j.economy.roll_ev)||0,totalRolls:+(j.economy&&j.economy.total_rolls)||0,landmarks,at:Date.now()};
-    calcCache.set(id,lastCalc);
+    calcCache.set(id,lastCalc);calcSeen++;
     refreshLauncher();
     if(view&&viewKind==='wiki')wikiView();
   }
@@ -261,6 +262,92 @@
       landmarks:c.landmarks.map(l=>({key:l.key,level:l.level,costs:l.costs.slice()})),
       imgBase:ok?im.imgBase:'',maquette:ok&&im.maquette.toLowerCase().includes('/'+art+'_maquette')?im.maquette:''};
   }
+  /* ---------- one click from the Hub: it opens the calculator with #mmhub={map,name,levels,bash,aid} ---------- */
+  function readJob(){
+    if(!isWiki)return null;
+    const m=/(?:^#|&)mmhub=([^&]+)/.exec(location.hash||'');
+    if(!m)return null;
+    try{
+      const j=JSON.parse(decodeURIComponent(m[1])),map=Number(j.map),name=tidy(j.name).slice(0,60);
+      if(!Number.isSafeInteger(map)||map<1||map>=1e6||!name)return null;
+      return {map,name,bash:!!j.bash,levels:(Array.isArray(j.levels)?j.levels:[]).slice(0,8).map(n=>Math.max(0,Math.min(6,Math.floor(+n||0)))),aid:/^[\w-]{1,64}$/.test(j.aid||'')?j.aid:''};
+    }catch{return null;}
+  }
+  const job=readJob(); // read now: the calculator rewrites its address once it loads
+  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  async function waitFor(fn,ms=10000,step=150){const end=Date.now()+ms;for(;;){let v=null;try{v=fn();}catch{}if(v)return v;if(Date.now()>end)return null;await sleep(step);}}
+  /** Types into a React-controlled field the same way a person would. */
+  function setInput(el,value){Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,value);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}
+  const shown = el => !!el && el.getClientRects().length>0 && !el.closest('#mm-album-bridge');
+  const exactText = (el,want) => [el,...el.querySelectorAll('*')].some(x=>x.childElementCount===0&&norm(x.textContent)===want);
+  /** The search result whose label is exactly the board name ("Sydney", never "Sydney Nights"). */
+  function boardOption(name,search){
+    // the clickable element itself, not a wrapper around it (a click on an <li> around the button does nothing)
+    const want=norm(name),pick=root=>{for(const sel of ['[role="option"]','button','a','li']){const hit=[...root.querySelectorAll(sel)].find(el=>el!==search&&shown(el)&&exactText(el,want));if(hit)return hit;}return null;};
+    let scope=search.parentElement;
+    for(let i=0;scope&&i<6;i++,scope=scope.parentElement){const hit=pick(scope);if(hit)return hit;}
+    return [...document.querySelectorAll('[role="option"],[role="listbox"] *')].find(el=>shown(el)&&exactText(el,want))||null;
+  }
+  const calcButton = () => [...document.querySelectorAll('button')].find(b=>shown(b)&&/^\s*calculate\s*$/i.test(b.textContent));
+  const bashBox = () => [...document.querySelectorAll('label')].filter(l=>/builder.?s bash/i.test(l.textContent)).map(l=>l.querySelector('input[type="checkbox"]')).find(Boolean);
+  /** Each landmark card's 0–6 "completed level" buttons, in page order. */
+  function levelGroups(){
+    const groups=[];
+    for(const b of document.querySelectorAll('button')){
+      if(b.textContent.trim()!=='0'||!b.parentElement)continue;
+      const row=[...b.parentElement.children].filter(x=>x.tagName==='BUTTON');
+      if(row.length===7&&row.every((x,i)=>x.textContent.trim()===String(i))&&!groups.some(g=>g[0]===row[0]))groups.push(row);
+    }
+    return groups;
+  }
+  async function nextCalc(after,ms=12000){return waitFor(()=>calcSeen>after,ms);}
+  async function runJob(j){
+    if(busy)return;busy=true;viewKind='wiki:job';
+    panel('Importing your board',`<div class="help"><div class="account"><div><span class="muted">From the Hub</span><strong>${esc(j.name)}</strong><span class="muted">Map #${j.map}${j.bash?' · Builder’s Bash':''}${j.levels.some(Boolean)?' · levels '+j.levels.join(' · '):''}</span></div><div class="arrow">→</div><div><span class="muted">Then</span><strong>Back to the Hub</strong><span class="muted">for your review</span></div></div><ol><li>Fill in the map number and board</li><li>Press CALCULATE</li><li>Set your landmark levels</li><li>Send everything to the Hub</li></ol><div id="message" class="notice">Waiting for the calculator…</div></div>`,`<span class="spacer"></span><button id="again" hidden>Try again</button><a href="${HUB}" target="_blank" rel="noopener">Open Hub ↗</a>`);
+    try{
+      const map=await waitFor(()=>document.querySelector('#map-number'),20000);
+      const search=await waitFor(()=>document.querySelector('#board-search'),5000);
+      if(!map||!search)throw Error('The calculator did not load. Reload the page, or fill it in by hand and press CALCULATE.');
+      notice(`Choosing map #${j.map}…`);
+      if(Number(map.value)!==j.map){setInput(map,String(j.map));await sleep(350);}
+      if(norm(search.value)!==norm(j.name)||!(lastCalc&&norm(lastCalc.name)===norm(j.name))){
+        notice(`Finding “${j.name}”…`);
+        search.focus();setInput(search,'');await sleep(150);setInput(search,j.name);
+        const opt=await waitFor(()=>boardOption(j.name,search),10000);
+        if(!opt)throw Error(`The wiki has no board named “${j.name}”. Check the board name in the Hub (it must match the game exactly), or pick it here by hand and press CALCULATE.`);
+        opt.click();await sleep(450);
+      }
+      const box=bashBox();if(box&&box.checked!==j.bash){box.click();await sleep(250);}
+      notice('Calculating…');
+      const btn=await waitFor(calcButton,5000);
+      if(!btn)throw Error('Could not find the CALCULATE button. Press it yourself, then use Send board to Hub.');
+      const seen=calcSeen;btn.click();
+      const ok=await waitFor(()=>calcSeen>seen&&lastCalc&&lastCalc.map===j.map&&norm(lastCalc.name)===norm(j.name)&&lastCalc,15000);
+      if(!ok)throw Error('The calculator did not answer for this board and map number. Check both in the Hub, or try again.');
+      const count=(await waitFor(()=>{const g=levelGroups();return g.length?g:null;},8000)||[]).length;
+      // the page redraws its buttons after every recalculation, so find them again before each click
+      const press=async(k,n)=>{const row=levelGroups()[k];if(!row||!row[n])return;const s=calcSeen;row[n].click();await nextCalc(s);await sleep(150);};
+      // start every landmark at 0 so all six prices are seen, then set the real levels
+      for(let k=0;k<count;k++)if(lastCalc.landmarks[k]&&lastCalc.landmarks[k].level!==0)await press(k,0);
+      if(j.levels.some(Boolean))notice('Setting your landmark levels…');
+      for(let k=0;k<count;k++){
+        const want=j.levels[k];
+        if(want==null||(lastCalc.landmarks[k]&&lastCalc.landmarks[k].level===want))continue;
+        await press(k,want);
+      }
+      await waitFor(()=>lastCalc.landmarks.every((l,k)=>j.levels[k]==null||l.level===j.levels[k]),6000);
+      const p=boardPayload();
+      if(j.aid)p.hint=j.aid;
+      await pushExtra(p);
+      try{history.replaceState(null,'',location.pathname+location.search);}catch{}
+      notice(`Sent ${p.name} #${p.map} to the Hub. Switch back to the Hub tab — your review is waiting there.`,'good');
+      const again=q('#again');if(again){again.hidden=false;again.textContent='Close this tab';again.onclick=()=>{window.close();};}
+    }catch(e){
+      notice(e.message,'error');
+      const again=q('#again');if(again){again.hidden=false;again.onclick=()=>{busy=false;runJob(j);};}
+    }finally{busy=false;}
+  }
+
   const short = n => {const a=Math.abs(n),u=a>=1e12?[1e12,'T']:a>=1e9?[1e9,'B']:a>=1e6?[1e6,'M']:a>=1e3?[1e3,'K']:[1,''];return (+(n/u[0]).toFixed(2))+u[1];};
 
   /* ---------- profile & board captures wait here until the Hub reviews them ---------- */
@@ -310,7 +397,7 @@
     let start=null;
     launcher.addEventListener('pointerdown',e=>{if(e.button!==0)return;start={x:e.clientX,y:e.clientY,left:launcher.getBoundingClientRect().left,top:launcher.getBoundingClientRect().top};launcher._dragged=false;launcher.setPointerCapture(e.pointerId);});
     launcher.addEventListener('pointermove',e=>{if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;if(Math.abs(dx)+Math.abs(dy)>7){launcher._dragged=true;launcher.style.right='auto';launcher.style.left=Math.max(0,Math.min(innerWidth-launcher.offsetWidth,start.left+dx))+'px';launcher.style.top=Math.max(0,Math.min(innerHeight-launcher.offsetHeight,start.top+dy))+'px';}});
-    launcher.addEventListener('pointerup',()=>{start=null;setTimeout(()=>launcher._dragged=false,0);});
+    launcher.addEventListener('pointerup',()=>{start=null;setTimeout(()=>{launcher._dragged=false;},0);});
     launcher.addEventListener('pointercancel',()=>{start=null;});
     addEventListener('keydown',e=>{if(e.altKey&&e.shiftKey&&e.code==='KeyM'){e.preventDefault();view?close():open();}});
   }
@@ -432,7 +519,7 @@
     q('#sets').innerHTML=SETS.map(s=>`<section class="set" id="set-${s.id}" style="--set-color:${s.color}"><header class="sethead"><div><div class="muted">SET ${s.id}</div><h3>${esc(s.name)}</h3></div><b id="set-have-${s.id}" class="small"></b></header><div class="grid">${CARDS.filter(c=>c.setId===s.id).map(c=>{const url=artURL(c);return `<article class="sticker" id="card-${c.i}"><span class="edited" hidden>Edited</span><div class="stars">${'★'.repeat(c.stars)}${c.gold?' · GOLD':''}</div><div class="art">${url?`<img loading="lazy" src="${esc(url)}" alt="${esc(c.name)}">`:`<span class="placeholder">✦</span>`}</div><div class="name">${esc(c.name)}</div><div class="state"></div><div class="before"></div><div class="edit"><button data-i="${c.i}" data-step="-1" aria-label="Decrease ${esc(c.name)}">−</button><input data-count="${c.i}" type="number" min="0" max="999999" step="1" value="${review.draft[c.i]}" aria-label="Total copies of ${esc(c.name)}"><button data-i="${c.i}" data-step="1" aria-label="Increase ${esc(c.name)}">+</button></div><label class="include"><input type="checkbox" data-include="${c.i}" ${review.included[c.i]?'checked':''}> Include update</label></article>`;}).join('')}</div></section>`).join('');
     q('#sets').classList.toggle('editing',review.editing);
     for(const c of CARDS)paintCard(c.i);
-    q('#sets').querySelectorAll('img').forEach(img=>img.onerror=()=>{const placeholder=document.createElement('span');placeholder.className='placeholder';placeholder.textContent='✦';img.replaceWith(placeholder);});
+    q('#sets').querySelectorAll('img').forEach(img=>{img.onerror=()=>{const placeholder=document.createElement('span');placeholder.className='placeholder';placeholder.textContent='✦';img.replaceWith(placeholder);};});
   }
   function paintCard(i){
     const el=q('#card-'+i);if(!el)return;const n=review.included[i]?review.draft[i]:review.baseline[i],old=review.baseline[i],c=CARDS[i];
@@ -440,7 +527,7 @@
     el.querySelector('.state').textContent=n===0?'MISSING':n===1?'HAVE · 1 COPY':`HAVE · +${n-1} DUPLICATES`;
     el.querySelector('.before').textContent=review.aid?`Total copies: ${old} → ${n}`:`Total copies: ${n}`;
     el.querySelector('.edited').hidden=review.draft[i]===review.snapshot.counts[i];
-    el.querySelector('[data-count]').disabled=!review.included[i];el.querySelectorAll('[data-step]').forEach(b=>b.disabled=!review.included[i]);
+    el.querySelector('[data-count]').disabled=!review.included[i];el.querySelectorAll('[data-step]').forEach(b=>{b.disabled=!review.included[i];});
   }
   function updateTotals(){
     const next=effective(),a=stats(review.baseline,review.goldDouble),b=stats(next,review.goldDouble);
@@ -547,8 +634,9 @@
       checkPending(true).catch(()=>{});let attempts=0;const wait=setInterval(()=>{checkPending(true).catch(()=>{});if(++attempts>=30)clearInterval(wait);},1000);
     }
     else {
-      const route=()=>{const kind=sourceKind();if(view&&viewKind&&viewKind!==kind)close();refreshLauncher();};
+      const route=()=>{const kind=sourceKind();if(view&&viewKind&&viewKind.split(':')[0]!==kind)close();refreshLauncher();};
       route();setInterval(route,1000);
+      if(job&&sourceKind()==='wiki')setTimeout(()=>{runJob(job);},900);
     }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

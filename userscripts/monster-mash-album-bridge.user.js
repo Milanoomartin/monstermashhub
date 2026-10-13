@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Monster Mash Album Bridge
 // @namespace    monster-mash-album-bridge
-// @version      1.2.0
-// @description  Capture your official Monster Mash album, profile picture, frame and board, plus board-upgrade costs from the MOGO Wiki calculator. Review everything in the Monster Mash Hub before it saves.
+// @version      1.3.0
+// @description  Queue official Monster Mash albums from as many players as you like, with profile pictures, frames and boards, plus board-upgrade costs from the MOGO Wiki calculator. Review everything in the Monster Mash Hub before it saves.
 // @author       Monster Mash Hub (fan-made)
 // @homepageURL  https://milanoomartin.github.io/monstermashhub/#bridge
 // @downloadURL  https://milanoomartin.github.io/monstermashhub/userscripts/monster-mash-album-bridge.user.js
@@ -31,8 +31,10 @@
   const CARDS = SETS.flatMap(s => s.stickers.map((c, n) => ({...c, i:(s.id-1)*9+n, setId:s.id, n:n+1, key:`s${s.id}_${n+1}`, id:`SpookyAlbum.${s.id}.${n+1}`})));
   const HUB = 'https://milanoomartin.github.io/monstermashhub/';
   const OFFICIAL = 'https://www.monopolygo.com/sticker-album';
+  // KEY and BACKUP are the single-capture slots used up to 1.2; they are read once and moved into QUEUE / UNDO.
   const KEY = 'mmab.pending.v1', BACKUP = 'mmab.undo.v1', LINKS = 'mmab.links.v1', EXTRAS = 'mmab.extras.v1';
-  const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.0';
+  const QUEUE = 'mmab.queue.v1', UNDO = 'mmab.undo.v2', MAX_QUEUE = 24;
+  const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.3.0';
   const isHub = location.origin === 'https://milanoomartin.github.io';
   const isWiki = location.hostname === 'monopolygo.wiki';
   const CALC_PATH = '/mogo-tools/board-upgrade-calculator';
@@ -110,6 +112,34 @@
     const linked=accounts.find(a=>a.id===links?.[norm(name)]);
     return linked ? {id:linked.id,reason:'Using your previously confirmed account link'} : {id:'',reason:'No name match. Select your account below, or add it in the Hub first.'};
   }
+  /* ---------- album queue: one capture per player (the newest), kept until the Hub applies or removes it ---------- */
+  const keepNewest = list => {const by=new Map();for(const s of list){const k=norm(s.name),o=by.get(k);if(!o||s.capturedAt>o.capturedAt)by.set(k,s);}return [...by.values()].sort((a,b)=>a.capturedAt-b.capturedAt).slice(-MAX_QUEUE);};
+  async function albumQueue(){
+    let list=await GM_getValue(QUEUE,[]);if(!Array.isArray(list))list=[];
+    const legacy=await GM_getValue(KEY,null);
+    if(legacy){list.push(legacy);await GM_deleteValue(KEY);}
+    const ok=[];for(const s of list){try{ok.push(validateSnapshot(s));}catch{}}
+    const out=keepNewest(ok);
+    if(legacy||out.length!==list.length)await GM_setValue(QUEUE,out);
+    return out;
+  }
+  async function queueAdd(s){await GM_setValue(QUEUE,keepNewest([...(await albumQueue()),s]));}
+  async function queueDrop(ids){const drop=new Set([].concat(ids));await GM_setValue(QUEUE,(await albumQueue()).filter(x=>!drop.has(x.id)));}
+  const ago = t => {const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} h ago`:new Date(t).toLocaleString();};
+  const initial = s => esc(String(s||'?').trim().slice(0,1).toUpperCase()||'?');
+
+  /* ---------- undo: the counts from before the last import, for every account it changed ---------- */
+  const validUndoItem = x => x&&typeof x.aid==='string'&&Array.isArray(x.before)&&Array.isArray(x.after)&&x.before.length===198&&x.after.length===198&&x.before.every(validCount)&&x.after.every(validCount);
+  async function undoBatch(){
+    let b=await GM_getValue(UNDO,null);
+    if(!b){const old=await GM_getValue(BACKUP,null);if(old&&old.version===1)b={version:2,hubUser:old.hubUser,at:old.at,items:[{aid:old.aid,name:old.name,before:old.before,after:old.after}]};}
+    if(!b||b.version!==2||!Array.isArray(b.items))return null;
+    b.items=b.items.filter(validUndoItem);
+    return b.items.length?b:null;
+  }
+  async function saveUndo(hubUser,items){if(items.length)await GM_setValue(UNDO,{version:2,hubUser,at:Date.now(),items});else await GM_deleteValue(UNDO);await GM_deleteValue(BACKUP);}
+  async function dropUndo(aid){const b=await undoBatch();if(!b)return;await saveUndo(b.hubUser,b.items.filter(x=>x.aid!==aid));}
+
   function toPage(value){return typeof cloneInto==='function' ? cloneInto(value,page) : value;}
   function applyToHub(mm, aid, next, baseline) {
     const a=ownAccounts(mm).find(x=>x.id===aid);
@@ -373,22 +403,23 @@
   async function refreshLauncher(){
     if(!launcher)return;
     if(isHub){
-      const pending=await GM_getValue(KEY,null),n=(pending?1:0)+(await extras()).length;
+      const n=(await albumQueue()).length+(await extras()).length;
       launcher.textContent=n?`✦ Album Bridge · ${n} to review`:'✦ Album Bridge';
       return;
     }
     const kind=sourceKind();
     launcher.hidden=!kind;
+    if(kind==='album'){const n=(await albumQueue()).length;launcher.textContent=n?`✦ Album Bridge · ${n} queued`:'✦ Album Bridge';return;}
     launcher.textContent=kind==='profile'?'✦ Send profile to Hub':kind==='wiki'?(lastCalc?'✦ Send board to Hub ●':'✦ Send board to Hub'):'✦ Album Bridge';
   }
 
   const CSS = `
     [hidden]{display:none!important}
-    :host{all:initial;font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#f5f3ff;color-scheme:dark}*{box-sizing:border-box}button,input,select{font:inherit}button,a,input,select{touch-action:manipulation}button,a{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #58ead3;outline-offset:3px}button{border:1px solid #625876;border-radius:10px;padding:10px 15px;background:#312941;color:#fff;font-weight:650}button:hover{background:#493860}button:disabled{opacity:.45;cursor:not-allowed}button.primary{background:#a4f06a;color:#15220c;border-color:#a4f06a}button.danger{background:#552735;border-color:#a54664}a{color:#78e4dd}input,select{color:#fff;background:#181420;border:1px solid #6b5d7a;border-radius:8px;padding:9px}label{display:block}h1,h2,h3,p{margin:0}h1{font-size:28px;line-height:1.15;letter-spacing:-.6px}h2{font-size:21px}h3{font-size:16px}.muted{color:#c0b6cf;font-size:13px}.tag{color:#b9f78b;text-transform:uppercase;font-size:11px;font-weight:800;letter-spacing:1.8px;margin-bottom:6px}.launcher{position:fixed;top:90px;right:18px;z-index:2147483646;box-shadow:0 5px 22px #0008;background:#21152f;border:1px solid #b986ef;border-radius:25px;user-select:none;touch-action:none}.backdrop{position:fixed;inset:0;z-index:2147483647;background:#090612c9;display:flex;align-items:center;justify-content:center;padding:20px}.panel{width:min(1420px,100%);height:min(94vh,1100px);background:#171220;border:1px solid #5c466f;border-radius:22px;box-shadow:0 24px 100px #000b;display:flex;flex-direction:column;overflow:hidden}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 26px;background:linear-gradient(110deg,#30203f,#191624);border-bottom:1px solid #453452}.top .close{font-size:24px;padding:0 10px;background:transparent}.body{overflow:auto;padding:22px 26px;flex:1}.foot{padding:15px 26px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-top:1px solid #493856;background:#21182e}.spacer{flex:1}.notice{padding:13px 16px;border:1px solid #6e567e;border-radius:12px;background:#30223c;margin:14px 0}.notice:empty{display:none}.notice.error{border-color:#eb8da0;color:#ffd9df;background:#421e2b}.notice.good{border-color:#75b56d;color:#d8ffd3;background:#1c3226}.account{display:grid;grid-template-columns:1fr 36px 1fr;gap:12px;align-items:center;background:#231b30;border:1px solid #4e3c60;border-radius:14px;padding:17px}.account strong{font-size:22px;display:block}.account select{width:100%;margin-top:5px}.account .arrow{font-size:25px;color:#a4f06a;text-align:center}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.metric{background:#251d31;border:1px solid #443452;border-radius:13px;padding:13px 15px}.metric b{font-size:25px;display:block;color:#e2f8c9}.metric span{font-size:12px;color:#c8bed4}.metric .old{font-size:15px;color:#a89bb8;font-weight:500}.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0}.controls select{max-width:260px}.controls input{flex:1;min-width:150px}.sets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.set{background:#201928;border:1px solid #493853;border-radius:18px;overflow:hidden;scroll-margin-top:12px}.sethead{padding:14px 16px;border-top:4px solid var(--set-color,#9f77cf);display:flex;justify-content:space-between;gap:8px;align-items:center}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 12px 14px}.sticker{min-width:0;border:1px solid #51445e;border-radius:12px;background:#2b2336;padding:10px;position:relative}.sticker.changed{border-color:#b3e790;box-shadow:inset 0 0 0 1px #b3e79033}.sticker.missing{background:#191620}.sticker.gold .stars{color:#ffd778}.sticker.excluded{opacity:.6}.art{height:125px;display:flex;align-items:center;justify-content:center;margin:4px 0}.art img{width:100%;height:100%;object-fit:contain}.art .placeholder{font-size:50px;color:#705c8b}.sticker.missing .art{filter:grayscale(.8);opacity:.45}.name{font-size:12px;line-height:1.3;min-height:32px;text-align:center;font-weight:700;overflow-wrap:anywhere}.stars{text-align:center;color:#c6b7db;letter-spacing:1px;font-size:12px}.state{text-align:center;margin:6px 0;font-weight:700;font-size:12px;color:#b9f78b}.missing .state{color:#f6b0bc}.before{text-align:center;font-size:11px;color:#b6a9c4}.edit{display:none;gap:5px;align-items:center;justify-content:center;margin-top:9px}.editing .edit{display:flex}.edit input[type=number]{width:72px;min-width:0;padding:5px;text-align:center}.edit button{padding:3px 8px}.include{display:none;font-size:11px;text-align:center;margin-top:7px}.editing .include{display:block}.include input{vertical-align:middle}.chips{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.chips span{border-radius:20px;padding:7px 12px;background:#372943;font-size:13px}.empty{text-align:center;color:#c9bed5;padding:40px}.help{max-width:850px;margin:auto}.help p{margin:14px 0}.help li{margin:10px 0}.small{font-size:12px}.mode{color:#b9f78b;font-size:13px}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.edited{position:absolute;top:5px;right:5px;background:#705298;border-radius:5px;padding:2px 4px;font-size:9px}.identity-check{margin-top:12px}.identity-check input{margin-right:8px}.sticker[hidden],.set[hidden]{display:none!important}.photo-mini{width:44px;height:44px;vertical-align:middle;margin-right:8px;object-fit:contain}.pf{display:flex;gap:14px;align-items:center}.pf-photo{width:88px;height:88px;flex:0 0 88px;display:grid;place-items:center;border-radius:16px;background:#2b2336}.pf-photo img{width:88px;height:88px;object-fit:contain}.pf strong,.pf span{display:block}.help ol{padding-left:22px}.metric b.text{font-size:19px}
+    :host{all:initial;font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#f5f3ff;color-scheme:dark}*{box-sizing:border-box}button,input,select{font:inherit}button,a,input,select{touch-action:manipulation}button,a{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #58ead3;outline-offset:3px}button{border:1px solid #625876;border-radius:10px;padding:10px 15px;background:#312941;color:#fff;font-weight:650}button:hover{background:#493860}button:disabled{opacity:.45;cursor:not-allowed}button.primary{background:#a4f06a;color:#15220c;border-color:#a4f06a}button.danger{background:#552735;border-color:#a54664}a{color:#78e4dd}input,select{color:#fff;background:#181420;border:1px solid #6b5d7a;border-radius:8px;padding:9px}label{display:block}h1,h2,h3,p{margin:0}h1{font-size:28px;line-height:1.15;letter-spacing:-.6px}h2{font-size:21px}h3{font-size:16px}.muted{color:#c0b6cf;font-size:13px}.tag{color:#b9f78b;text-transform:uppercase;font-size:11px;font-weight:800;letter-spacing:1.8px;margin-bottom:6px}.launcher{position:fixed;top:90px;right:18px;z-index:2147483646;box-shadow:0 5px 22px #0008;background:#21152f;border:1px solid #b986ef;border-radius:25px;user-select:none;touch-action:none}.backdrop{position:fixed;inset:0;z-index:2147483647;background:#090612c9;display:flex;align-items:center;justify-content:center;padding:20px}.panel{width:min(1420px,100%);height:min(94vh,1100px);background:#171220;border:1px solid #5c466f;border-radius:22px;box-shadow:0 24px 100px #000b;display:flex;flex-direction:column;overflow:hidden}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 26px;background:linear-gradient(110deg,#30203f,#191624);border-bottom:1px solid #453452}.top .close{font-size:24px;padding:0 10px;background:transparent}.body{overflow:auto;padding:22px 26px;flex:1}.foot{padding:15px 26px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-top:1px solid #493856;background:#21182e}.spacer{flex:1}.notice{padding:13px 16px;border:1px solid #6e567e;border-radius:12px;background:#30223c;margin:14px 0}.notice:empty{display:none}.notice.error{border-color:#eb8da0;color:#ffd9df;background:#421e2b}.notice.good{border-color:#75b56d;color:#d8ffd3;background:#1c3226}.account{display:grid;grid-template-columns:1fr 36px 1fr;gap:12px;align-items:center;background:#231b30;border:1px solid #4e3c60;border-radius:14px;padding:17px}.account strong{font-size:22px;display:block}.account select{width:100%;margin-top:5px}.account .arrow{font-size:25px;color:#a4f06a;text-align:center}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.metric{background:#251d31;border:1px solid #443452;border-radius:13px;padding:13px 15px}.metric b{font-size:25px;display:block;color:#e2f8c9}.metric span{font-size:12px;color:#c8bed4}.metric .old{font-size:15px;color:#a89bb8;font-weight:500}.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0}.controls select{max-width:260px}.controls input{flex:1;min-width:150px}.sets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.set{background:#201928;border:1px solid #493853;border-radius:18px;overflow:hidden;scroll-margin-top:12px}.sethead{padding:14px 16px;border-top:4px solid var(--set-color,#9f77cf);display:flex;justify-content:space-between;gap:8px;align-items:center}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 12px 14px}.sticker{min-width:0;border:1px solid #51445e;border-radius:12px;background:#2b2336;padding:10px;position:relative}.sticker.changed{border-color:#b3e790;box-shadow:inset 0 0 0 1px #b3e79033}.sticker.missing{background:#191620}.sticker.gold .stars{color:#ffd778}.sticker.excluded{opacity:.6}.art{height:125px;display:flex;align-items:center;justify-content:center;margin:4px 0}.art img{width:100%;height:100%;object-fit:contain}.art .placeholder{font-size:50px;color:#705c8b}.sticker.missing .art{filter:grayscale(.8);opacity:.45}.name{font-size:12px;line-height:1.3;min-height:32px;text-align:center;font-weight:700;overflow-wrap:anywhere}.stars{text-align:center;color:#c6b7db;letter-spacing:1px;font-size:12px}.state{text-align:center;margin:6px 0;font-weight:700;font-size:12px;color:#b9f78b}.missing .state{color:#f6b0bc}.before{text-align:center;font-size:11px;color:#b6a9c4}.edit{display:none;gap:5px;align-items:center;justify-content:center;margin-top:9px}.editing .edit{display:flex}.edit input[type=number]{width:72px;min-width:0;padding:5px;text-align:center}.edit button{padding:3px 8px}.include{display:none;font-size:11px;text-align:center;margin-top:7px}.editing .include{display:block}.include input{vertical-align:middle}.chips{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.chips span{border-radius:20px;padding:7px 12px;background:#372943;font-size:13px}.empty{text-align:center;color:#c9bed5;padding:40px}.help{max-width:850px;margin:auto}.help p{margin:14px 0}.help li{margin:10px 0}.small{font-size:12px}.mode{color:#b9f78b;font-size:13px}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.edited{position:absolute;top:5px;right:5px;background:#705298;border-radius:5px;padding:2px 4px;font-size:9px}.identity-check{margin-top:12px}.identity-check input{margin-right:8px}.sticker[hidden],.set[hidden]{display:none!important}.photo-mini{width:44px;height:44px;vertical-align:middle;margin-right:8px;object-fit:contain}.pf{display:flex;gap:14px;align-items:center}.pf-photo{width:88px;height:88px;flex:0 0 88px;display:grid;place-items:center;border-radius:16px;background:#2b2336}.pf-photo img{width:88px;height:88px;object-fit:contain}.pf strong,.pf span{display:block}.help ol{padding-left:22px}.metric b.text{font-size:19px}.wide{max-width:1180px}.queue{display:grid;gap:10px;margin:12px 0}.qrow{display:grid;grid-template-columns:auto 56px minmax(0,1fr) minmax(220px,300px) auto;gap:14px;align-items:center;background:#231b30;border:1px solid #4e3c60;border-radius:14px;padding:12px 14px}.qrow.small{grid-template-columns:48px minmax(0,1fr) auto}.qrow.off{opacity:.55}.qrow.warn{border-color:#e9b45c}.qrow.done{border-color:#75b56d}.qrow.fail{border-color:#eb8da0}.qava{width:56px;height:56px;border-radius:14px;background:#2b2336;display:grid;place-items:center;font-weight:800;font-size:22px;overflow:hidden;color:#d9c8f2}.qrow.small .qava{width:48px;height:48px}.qava img{width:100%;height:100%;object-fit:contain}.qinfo{min-width:0}.qinfo strong{font-size:18px;display:block;overflow-wrap:anywhere}.qnums{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.qnums span{background:#372943;border-radius:20px;padding:3px 10px;font-size:12px}.qnums .up{color:#c9f7a4}.qacct select{width:100%}.qcheck{font-size:13px;margin-top:7px}.qcheck input{margin-right:6px;vertical-align:middle}.qwarn{display:block;margin-top:6px;color:#f3cf8a;font-size:12px}.qacts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.qacts button{padding:7px 11px}.qinc input{width:20px;height:20px}.queue-head{display:flex;align-items:baseline;gap:10px;margin-top:22px}.qtools{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px}.qtools button{padding:6px 12px;font-size:13px}
     @media(min-width:1150px){.sets{grid-template-columns:repeat(3,minmax(0,1fr))}.art{height:112px}}
-    @media(max-width:700px){.backdrop{padding:0}.panel{height:100dvh;max-height:100dvh;border-radius:0}.top,.body,.foot{padding:14px}.top h1{font-size:23px}.sets{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric b{font-size:22px}.account{grid-template-columns:1fr}.account .arrow{display:none}.foot button{flex:1}.foot .muted{width:100%}.art{height:118px}.launcher{top:78px;right:10px}}
+    @media(max-width:700px){.backdrop{padding:0}.panel{height:100dvh;max-height:100dvh;border-radius:0}.top,.body,.foot{padding:14px}.top h1{font-size:23px}.sets{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.metric b{font-size:22px}.account{grid-template-columns:1fr}.account .arrow{display:none}.foot button{flex:1}.foot .muted{width:100%}.art{height:118px}.launcher{top:78px;right:10px}.qrow{grid-template-columns:auto 48px minmax(0,1fr)}.qrow .qava{width:48px;height:48px}.qacct,.qrow:not(.small) .qacts{grid-column:1/-1}.qacts{justify-content:flex-start}}
   `;
-  let host,root,launcher,view=null,viewKind='',review=null,sourceSnapshot=null,busy=false,lastAuto='',previousFocus;
+  let host,root,launcher,view=null,viewKind='',review=null,qstate=null,sourceSnapshot=null,busy=false,lastAuto='',previousFocus;
   function mount(){
     if(host)return;
     host=document.createElement('div');host.id='mm-album-bridge';root=host.attachShadow({mode:'open'});
@@ -416,10 +447,11 @@
     mount();
     if(!isHub){const kind=sourceKind();if(kind==='album')sourceView();else if(kind==='profile')profileView();else if(kind==='wiki')wikiView();return;}
     try{
-      const pending=await GM_getValue(KEY,null);
-      if(pending) return await showReview(validateSnapshot(pending));
+      const queued=await albumQueue();
+      if(queued.length>1) return await showQueue();
+      if(queued.length===1) return await showReview(queued[0]);
       const waiting=await extras();
-      panel('Bring your album into the Hub',`<div class="help"><p>Capture your full Monster Mash album, profile picture and board from MONOPOLY GO, then review it here before saving.</p><ol><li>Open your official <a href="${OFFICIAL}" target="_blank" rel="noopener">sticker album</a> and sign in. Click <b>Album Bridge</b>, then <b>Capture & send to Hub</b>.</li><li>Open your <a href="https://www.monopolygo.com/tycoon-profile" target="_blank" rel="noopener">Tycoon profile</a> and click <b>Send profile to Hub</b> for your picture, frame, level and board.</li><li>On the <a href="https://monopolygo.wiki${CALC_PATH}" target="_blank" rel="noopener">MOGO Wiki board calculator</a>, press <b>CALCULATE</b>, then <b>Send board to Hub</b> for landmark costs.</li><li>Return here to match each capture to an account, review, edit and confirm.</li></ol><div id="message" class="notice">${waiting.length?`${waiting.length} profile/board capture${waiting.length===1?'':'s'} waiting: ${esc(waiting.map(x=>x.kind==='board'?`${x.name} #${x.map}`:x.name).join(', '))}.`:'No pending capture.'}</div></div>`,`<a href="${OFFICIAL}" target="_blank" rel="noopener">Open official album ↗</a><span class="spacer"></span><button id="undo">Undo last bridge import</button>${waiting.length?'<button id="extras" class="primary">Review profile &amp; board captures</button>':''}<button id="reload">Check for capture</button>`);
+      panel('Bring your album into the Hub',`<div class="help"><p>Capture your full Monster Mash album, profile picture and board from MONOPOLY GO, then review it here before saving.</p><ol><li>Open your official <a href="${OFFICIAL}" target="_blank" rel="noopener">sticker album</a> and sign in. Click <b>Album Bridge</b>, then <b>Capture & add to queue</b>. Switch players and repeat as often as you like — every player waits in the queue.</li><li>Open your <a href="https://www.monopolygo.com/tycoon-profile" target="_blank" rel="noopener">Tycoon profile</a> and click <b>Send profile to Hub</b> for your picture, frame, level and board.</li><li>On the <a href="https://monopolygo.wiki${CALC_PATH}" target="_blank" rel="noopener">MOGO Wiki board calculator</a>, press <b>CALCULATE</b>, then <b>Send board to Hub</b> for landmark costs.</li><li>Return here to match each player to an account and apply them all at once, or review any one set by set.</li></ol><div id="message" class="notice">${waiting.length?`${waiting.length} profile/board capture${waiting.length===1?'':'s'} waiting: ${esc(waiting.map(x=>x.kind==='board'?`${x.name} #${x.map}`:x.name).join(', '))}.`:'No pending capture.'}</div></div>`,`<a href="${OFFICIAL}" target="_blank" rel="noopener">Open official album ↗</a><span class="spacer"></span><button id="undo">Undo last bridge import</button>${waiting.length?'<button id="extras" class="primary">Review profile &amp; board captures</button>':''}<button id="reload">Check for capture</button>`);
       button('reload',open);button('undo',showUndo);
       button('extras',async()=>{if(!hubBridge())throw Error('Reload the Hub — this version cannot review profile or board captures yet.');close();await offerExtras(true);});
     }catch(e){panel('Unable to open review',`<div id="message" class="notice error">${esc(e.message)}</div>`,`<button id="retry">Try again</button>`);button('retry',open);}
@@ -450,14 +482,22 @@
     panel('Send board costs to the Hub',`<div class="help"><div class="account"><div><span class="muted">Board</span><strong>${esc(c?c.name:'Not calculated yet')}</strong>${c?`<span class="muted">Map #${c.map} · ${c.landmarks.length} landmarks</span>`:''}</div><div class="arrow">→</div><div><span class="muted">Destination</span><strong>Hub · Board page</strong><span class="muted">You pick the account there</span></div></div>${c?`<div class="metrics">${metric('Remaining',short(left))}${metric('Landmark levels',c.landmarks.map(l=>l.level).join(' · '))}${metric('Total rolls',c.totalRolls?c.totalRolls.toLocaleString():'—')}${metric('Prices captured',c.landmarks.reduce((s,l)=>s+l.costs.filter(Boolean).length,0)+'/'+c.landmarks.length*6)}</div>`:''}<ol><li>Pick your map number and board, then press <b>CALCULATE</b>.</li><li>Set each landmark to its completed level — the wiki recalculates by itself.</li><li>Press <b>Send board costs to Hub</b>, then review it on the Hub’s Board page.</li></ol><p class="muted">The Bridge only reads the prices this page already loaded. It never sends anything to the wiki.</p><div id="message" class="notice ${c&&error?'error':''}">${esc(c?(error||'All prices captured — ready to send.'):'Waiting for the calculator. Press CALCULATE on the page.')}</div></div>`,`<span class="spacer"></span><button id="send" class="primary" ${ready?'':'disabled'}>Send board costs to Hub</button><a href="${HUB}" target="_blank" rel="noopener">Open Hub ↗</a>`);
     button('send',async()=>{const p=boardPayload();await pushExtra(p);notice(`Sent ${p.name} #${p.map}. Open the Hub to review and apply it.`,'good');q('#send').textContent='Send again';});
   }
-  function sourceView(){
+  async function sourceView(){
     viewKind='album';
     review=null;sourceSnapshot=null;
     let observed,error;
     try{observed=readAlbum();}catch(e){error=e.message;}
     const summary=observed?stats(observed.counts):null;
-    panel('Capture your official album',`<div class="help"><div class="account"><div><span class="muted">Official player</span><strong>${esc(observed?.name||currentName()[0]||'Waiting for sign-in')}</strong></div><div class="arrow">→</div><div><span class="muted">Destination</span><strong>Monster Mash Hub</strong></div></div>${summary?`<div class="metrics">${metric('Owned stickers',summary.have+'/198')}${metric('Missing stickers',summary.missing)}${metric('Duplicate copies',summary.duplicates)}${metric('Vault stars*',summary.vaultStars)}</div>`:''}<p>Reads the 198 loaded album cards, including missing stickers and duplicate badges. Nothing changes in either album until you confirm the Hub preview.</p><p class="muted">A “+3” badge becomes 4 total copies. *Vault stars shown here count gold duplicates double; the Hub preview uses your Hub setting.</p><div id="message" class="notice ${error?'error':''}">${esc(error||'All 22 sets are loaded and ready to capture.')}</div><p class="muted">If you just switched players or played in the app, reload this page first so the official website shows your latest album.</p></div>`,`<button id="refresh">Reload official page</button><span class="spacer"></span><button id="capture" class="primary">Capture & send to Hub</button><a id="open-hub" href="${HUB}" target="_blank" rel="noopener">Open Hub ↗</a>`);
+    const queued=await albumQueue(),already=observed&&queued.some(s=>norm(s.name)===norm(observed.name));
+    panel('Capture your official album',`<div class="help"><div class="account"><div><span class="muted">Official player</span><strong>${esc(observed?.name||currentName()[0]||'Waiting for sign-in')}</strong></div><div class="arrow">→</div><div><span class="muted">Destination</span><strong>Album Bridge queue</strong><span class="muted">then the Monster Mash Hub</span></div></div>${summary?`<div class="metrics">${metric('Owned stickers',summary.have+'/198')}${metric('Missing stickers',summary.missing)}${metric('Duplicate copies',summary.duplicates)}${metric('Vault stars*',summary.vaultStars)}</div>`:''}<p>Reads the 198 loaded album cards, including missing stickers and duplicate badges. Nothing changes in either album until you confirm in the Hub.</p><p class="muted">A “+3” badge becomes 4 total copies. *Vault stars shown here count gold duplicates double; the Hub uses your Hub setting.</p><div id="message" class="notice ${error?'error':''}">${esc(error||(already?`${observed.name} is already queued. Capturing again replaces that capture with this one.`:'All 22 sets are loaded and ready to capture.'))}</div><div class="queue-head"><h3>Queued for the Hub</h3><span class="muted" id="qcount"></span></div><div class="queue" id="qlist"></div><p class="muted">Capture as many players as you like: sign out, sign in as the next player, reload this page and capture again. Each player keeps only their newest capture. When you're done, open the Hub once to apply them all.</p></div>`,`<button id="refresh">Reload official page</button><span class="spacer"></span><button id="capture" class="primary">${already?'Capture again (replace)':'Capture & add to queue'}</button><a id="open-hub" href="${HUB}" target="_blank" rel="noopener">Open Hub ↗</a>`);
     button('refresh',()=>location.reload());button('capture',capture);
+    renderSourceQueue(queued);
+  }
+  function renderSourceQueue(list){
+    const box=q('#qlist');if(!box)return;
+    q('#qcount').textContent=list.length?`${list.length} player${list.length===1?'':'s'}`:'';
+    box.innerHTML=list.length?list.map(s=>{const st=stats(s.counts);return `<div class="qrow small"><div class="qava">${s.photo?`<img src="${esc(s.photo)}" alt="">`:initial(s.name)}</div><div class="qinfo"><strong>${esc(s.name)}</strong><span class="muted">${st.have}/198 owned · ${st.duplicates} duplicates · captured ${esc(ago(s.capturedAt))}</span></div><div class="qacts"><button data-drop="${esc(s.id)}" aria-label="Remove ${esc(s.name)} from the queue">Remove</button></div></div>`;}).join(''):'<p class="muted">Nothing queued yet.</p>';
+    box.onclick=e=>{const b=e.target.closest('[data-drop]');if(!b||busy)return;queueDrop(b.dataset.drop).then(albumQueue).then(l=>{renderSourceQueue(l);refreshLauncher();}).catch(err=>notice(err.message,'error'));};
   }
   function metric(label,value,old){return `<div class="metric"><span>${esc(label)}</span><b>${old!==undefined?`<span class="old">${esc(old)} → </span>`:''}${esc(value)}</b></div>`;}
   async function capture(){
@@ -472,17 +512,23 @@
       notice('Album verified. Grabbing your profile picture and frame…');
       let photo=null;try{photo=await withTimeout(composeProfile(profileWrapper()),15000);}catch{}
       sourceSnapshot={version:1,id:crypto.randomUUID(),albumId:'SpookyAlbum',name:second.name,counts:second.counts,capturedAt:Date.now(),method:'complete official album DOM',...(photo?{photo}:{})};
-      await GM_setValue(KEY,sourceSnapshot);
-      notice(`Captured all 198 stickers for ${second.name}${photo?' plus your profile picture and frame':''}. Open the Hub to review, manually alter, confirm, or reject.`, 'good');
-      q('#capture').textContent='Capture again';
+      const replaced=(await albumQueue()).some(s=>norm(s.name)===norm(second.name));
+      await queueAdd(sourceSnapshot);
+      const list=await albumQueue();
+      notice(`${replaced?'Updated':'Added'} ${second.name} — ${stats(second.counts).have}/198 owned${photo?', with profile picture and frame':''}. ${list.length} player${list.length===1?'':'s'} queued. Switch to another player and capture again, or open the Hub to apply them all.`, 'good');
+      renderSourceQueue(list);refreshLauncher();
+      q('#capture').textContent='Capture again (replace)';
     }finally{busy=false;if(q('#capture'))q('#capture').disabled=false;}
   }
   async function showReview(snapshot,mode='import',undo=null){
     const mm=hubApi(),accounts=clone(ownAccounts(mm));
     const links=await GM_getValue(LINKS,{});
-    const match=mode==='undo'?{id:undo.aid,reason:'Restoring the previous counts for this account'}:matchAccount(accounts,snapshot.name,links);
+    const match=mode==='undo'?{id:undo.aid,reason:'Restoring the previous counts for this account'}:(qstate&&qstate.rows.find(r=>r.id===snapshot.id&&r.aid))?{id:qstate.rows.find(r=>r.id===snapshot.id).aid,reason:'The account you chose in the list'}:matchAccount(accounts,snapshot.name,links);
+    // with other players queued (or a multi-account undo), offer a way back to the list
+    const backTo=mode==='undo'?((await undoBatch())?.items.length>1?'undo':''):((await albumQueue()).length>1?'queue':'');
+    viewKind='review';
     review={snapshot,mode,undo,accounts,aid:match.id,baseline:[],draft:snapshot.counts.slice(),included:Array(198).fill(true),editing:false,goldDouble:!!mm.S.st.settings.goldDouble,filter:'all',query:'',mm,matchedReason:match.reason};
-    panel(mode==='undo'?'Review undo':'Review your album update',`<div class="account"><div><span class="muted">${mode==='undo'?'Previous saved counts':'MONOPOLY GO account'}</span><strong>${esc(snapshot.name)}</strong><span class="muted">${esc(new Date(snapshot.capturedAt).toLocaleString())}</span></div><div class="arrow">→</div><label><span class="muted">Update this Hub account</span><select id="account" ${mode==='undo'?'disabled':''}><option value="">Select an account…</option>${accounts.map(a=>`<option value="${esc(a.id)}" ${a.id===match.id?'selected':''}>${esc(a.name)}${a.device?' · '+esc(a.device):''}</option>`).join('')}</select><span class="muted" id="match-note">${esc(match.reason)}</span></label></div><label class="identity-check" id="identity-label" hidden><input type="checkbox" id="identity">I confirm this is the correct Hub account for ${esc(snapshot.name)}.</label>${snapshot.photo&&mode==='import'?`<label class="identity-check"><input type="checkbox" id="use-photo" checked><img src="${esc(snapshot.photo)}" alt="" class="photo-mini">Also use this MONOPOLY GO profile picture &amp; frame as the Hub account picture.</label>`:''}<div id="message" class="notice"></div><div id="totals" class="metrics"></div><p class="muted">Owned = unique stickers · Copies = owned plus duplicates · Album stars = one copy of each owned sticker · Vault stars = duplicates only${review.goldDouble?', with gold counted double':', with gold counted at face value'}. Counts below include the first owned copy.</p><div class="chips"><span id="changes-chip"></span><span id="sets-chip"></span><span>All 198 source records verified</span></div><div class="controls"><select id="filter" aria-label="Filter stickers"><option value="all">All stickers</option><option value="changed">Changes only</option><option value="missing">Missing after update</option><option value="duplicates">Duplicates after update</option></select><select id="jump" aria-label="Jump to set"><option value="">Jump to set…</option>${SETS.map(s=>`<option value="${s.id}">${s.id}. ${esc(s.name)}</option>`).join('')}</select><input type="search" id="search" placeholder="Find a sticker or set" aria-label="Search stickers"><span class="mode" id="edit-mode">Preview mode</span></div><div class="sets" id="sets"></div><div class="empty" id="empty" hidden>No stickers match this filter.</div>`,`<button id="reject" class="danger">${mode==='undo'?'Cancel undo':'Reject update'}</button><button id="edit">Manual alter</button><button id="reset">Reset edits</button><span class="spacer"></span><span class="muted" id="commit-note">Review first. Save only when ready.</span><button id="confirm" class="primary">${mode==='undo'?'Confirm undo':'Confirm update'}</button>`);
+    panel(mode==='undo'?'Review undo':'Review your album update',`<div class="account"><div><span class="muted">${mode==='undo'?'Previous saved counts':'MONOPOLY GO account'}</span><strong>${esc(snapshot.name)}</strong><span class="muted">${esc(new Date(snapshot.capturedAt).toLocaleString())}</span></div><div class="arrow">→</div><label><span class="muted">Update this Hub account</span><select id="account" ${mode==='undo'?'disabled':''}><option value="">Select an account…</option>${accounts.map(a=>`<option value="${esc(a.id)}" ${a.id===match.id?'selected':''}>${esc(a.name)}${a.device?' · '+esc(a.device):''}</option>`).join('')}</select><span class="muted" id="match-note">${esc(match.reason)}</span></label></div><label class="identity-check" id="identity-label" hidden><input type="checkbox" id="identity">I confirm this is the correct Hub account for ${esc(snapshot.name)}.</label>${snapshot.photo&&mode==='import'?`<label class="identity-check"><input type="checkbox" id="use-photo" checked><img src="${esc(snapshot.photo)}" alt="" class="photo-mini">Also use this MONOPOLY GO profile picture &amp; frame as the Hub account picture.</label>`:''}<div id="message" class="notice"></div><div id="totals" class="metrics"></div><p class="muted">Owned = unique stickers · Copies = owned plus duplicates · Album stars = one copy of each owned sticker · Vault stars = duplicates only${review.goldDouble?', with gold counted double':', with gold counted at face value'}. Counts below include the first owned copy.</p><div class="chips"><span id="changes-chip"></span><span id="sets-chip"></span><span>All 198 source records verified</span></div><div class="controls"><select id="filter" aria-label="Filter stickers"><option value="all">All stickers</option><option value="changed">Changes only</option><option value="missing">Missing after update</option><option value="duplicates">Duplicates after update</option></select><select id="jump" aria-label="Jump to set"><option value="">Jump to set…</option>${SETS.map(s=>`<option value="${s.id}">${s.id}. ${esc(s.name)}</option>`).join('')}</select><input type="search" id="search" placeholder="Find a sticker or set" aria-label="Search stickers"><span class="mode" id="edit-mode">Preview mode</span></div><div class="sets" id="sets"></div><div class="empty" id="empty" hidden>No stickers match this filter.</div>`,`${backTo?`<button id="back">← ${backTo==='undo'?'All undo items':'All captures'}</button>`:''}<button id="reject" class="danger">${mode==='undo'?'Cancel undo':'Reject update'}</button><button id="edit">Manual alter</button><button id="reset">Reset edits</button><span class="spacer"></span><span class="muted" id="commit-note">Review first. Save only when ready.</span><button id="confirm" class="primary">${mode==='undo'?'Confirm undo':'Confirm update'}</button>`);
     q('#account').onchange=e=>selectAccount(e.target.value);
     q('#identity').onchange=updateConfirm;
     q('#filter').onchange=e=>{review.filter=e.target.value;applyFilter();};
@@ -491,11 +537,11 @@
     button('edit',()=>{review.editing=!review.editing;q('#sets').classList.toggle('editing',review.editing);q('#edit').textContent=review.editing?'Finish editing':'Manual alter';q('#edit-mode').textContent=review.editing?'Editing total copies':'Preview mode';});
     button('reset',()=>{review.draft=review.snapshot.counts.slice();review.included.fill(true);renderCards();updateTotals();});
     button('confirm',commit);button('reject',reject);
+    button('back',()=>(backTo==='undo'?showUndo():showQueue()));
     q('#sets').addEventListener('input',e=>{const inp=e.target;if(!inp.matches('[data-count]'))return;const i=+inp.dataset.count,n=Number(inp.value);if(inp.value.trim()===''||!validCount(n)){inp.setCustomValidity('Enter a whole number from 0 to 999999.');inp.setAttribute('aria-invalid','true');}else{inp.setCustomValidity('');inp.removeAttribute('aria-invalid');review.draft[i]=n;paintCard(i);}updateTotals();});
     q('#sets').addEventListener('change',e=>{if(e.target.matches('[data-include]')){const i=+e.target.dataset.include;review.included[i]=e.target.checked;paintCard(i);updateTotals();}});
     q('#sets').addEventListener('click',e=>{const b=e.target.closest('[data-step]');if(!b)return;const i=+b.dataset.i;review.draft[i]=Math.max(0,Math.min(999999,review.draft[i]+Number(b.dataset.step)));const inp=q(`[data-count="${i}"]`);inp.value=review.draft[i];inp.setCustomValidity('');inp.removeAttribute('aria-invalid');paintCard(i);updateTotals();});
     selectAccount(match.id);
-    lastAuto=snapshot.id;
   }
   function selectAccount(aid){
     if(!review)return;
@@ -556,8 +602,12 @@
   }
   async function reject(){
     if(!review)return;
-    if(review.mode==='import'){const pending=await GM_getValue(KEY,null);if(pending?.id===review.snapshot.id)await GM_deleteValue(KEY);}
-    review=null;panel('Update rejected',`<div class="help"><div class="notice good">No sticker counts were changed.</div></div>`,`<button id="done">Close</button>`);button('done',close);
+    const r=review;
+    if(r.mode==='import')await queueDrop(r.snapshot.id);
+    const left=r.mode==='import'?(await albumQueue()).length:0;
+    review=null;panel('Update rejected',`<div class="help"><div class="notice good">No sticker counts were changed${r.mode==='import'?` and ${esc(r.snapshot.name)}'s capture was removed from the queue`:''}.</div></div>`,`<button id="done">Close</button>${left?`<span class="spacer"></span><button id="next" class="primary">Next: ${left} more capture${left===1?'':'s'}</button>`:''}`);
+    button('done',close);button('next',open);
+    refreshLauncher();
   }
   async function commit(){
     if(!review||busy||q('#confirm').disabled)return;
@@ -573,13 +623,13 @@
       if(!equal(Array.from(mm.S.st.counts[r.aid]||[]),r.baseline))throw Error('The account changed while this preview was open. Close and reopen it to review the latest counts.');
       if(!equal(JSON.parse(localStorage.getItem('mmx-state-v1')||'null')?.counts?.[r.aid],r.baseline))throw Error('The saved account changed in another tab or is still saving. Reopen the review after the Hub finishes saving.');
       if(r.mode==='import'){
-        const pending=await GM_getValue(KEY,null);
-        if(pending?.id!==r.snapshot.id)throw Error('This capture was replaced or rejected in another tab. Reopen Album Bridge to load the latest capture.');
+        if(!(await albumQueue()).some(s=>s.id===r.snapshot.id))throw Error('This capture was replaced or removed in another tab. Go back to the list to review the newest one.');
       }else if(!equal(r.baseline,r.undo.after))throw Error('Undo blocked: counts changed after the import.');
       const changes=next.filter((n,i)=>n!==r.baseline[i]).length;
       const usePhoto=r.mode==='import'&&!!r.snapshot.photo&&!!q('#use-photo')?.checked;
       if(changes){
-        await GM_setValue(BACKUP,{version:1,aid:r.aid,name:r.accountName,hubUser:r.hubUser,before:r.baseline.slice(),after:next.slice(),at:Date.now()});
+        // an undo is itself never recorded as something to undo (that would wipe the rest of a batch's undo)
+        if(r.mode==='import')await saveUndo(r.hubUser,[{aid:r.aid,name:r.accountName,before:r.baseline.slice(),after:next.slice()}]);
         // Repeat the conflict check after asynchronous backup storage, immediately before mutating the Hub.
         hubApi();
         if(String(mm.Cloud?.user?.id||'local')!==r.hubUser || mm.S.acct(r.aid)?.name!==r.accountName)throw Error('Your Hub account changed before saving. Reopen the review.');
@@ -591,29 +641,161 @@
       try{
         if(r.mode==='import'){
           const links=await GM_getValue(LINKS,{});links[norm(r.snapshot.name)]=r.aid;await GM_setValue(LINKS,links);
-          const pending=await GM_getValue(KEY,null);if(pending?.id===r.snapshot.id)await GM_deleteValue(KEY);
-        }else await GM_deleteValue(BACKUP);
-      }catch{cleanupWarning=' Saved successfully, but the pending-capture record could not be cleared.';}
+          await queueDrop(r.snapshot.id);
+        }else await dropUndo(r.aid);
+      }catch{cleanupWarning=' Saved successfully, but the queue record could not be cleared.';}
+      const left=r.mode==='import'?(await albumQueue()).length:((await undoBatch())?.items.length||0);
       const result=stats(next,r.goldDouble);review=null;
-      panel(r.mode==='undo'?'Previous counts restored':'Album update saved',`<div class="help"><div class="notice good">${esc(r.accountName)}: ${changes} sticker counts ${r.mode==='undo'?'restored':'updated'}.${esc(photoNote)}${esc(cleanupWarning)}</div><div class="metrics">${metric('Owned stickers',result.have+'/198')}${metric('Missing',result.missing)}${metric('Duplicate copies',result.duplicates)}${metric('Vault stars',result.vaultStars)}</div><p>Saved through the Hub’s normal update flow. If you use Hub cloud sync, its normal save and sharing settings apply. Check the Hub’s cloud status for remote sync completion.</p></div>`,`<button id="done" class="primary">Done</button>${r.mode==='import'&&changes?'<button id="undo">Review undo</button>':''}`);
-      button('done',close);button('undo',showUndo);
+      panel(r.mode==='undo'?'Previous counts restored':'Album update saved',`<div class="help"><div class="notice good">${esc(r.accountName)}: ${changes} sticker counts ${r.mode==='undo'?'restored':'updated'}.${esc(photoNote)}${esc(cleanupWarning)}</div><div class="metrics">${metric('Owned stickers',result.have+'/198')}${metric('Missing',result.missing)}${metric('Duplicate copies',result.duplicates)}${metric('Vault stars',result.vaultStars)}</div><p>Saved through the Hub’s normal update flow. If you use Hub cloud sync, its normal save and sharing settings apply. Check the Hub’s cloud status for remote sync completion.</p></div>`,`<button id="done">Done</button>${r.mode==='import'&&changes?'<button id="undo">Review undo</button>':''}${left?`<span class="spacer"></span><button id="next" class="primary">${r.mode==='undo'?`Back to undo list (${left})`:`Next: ${left} more capture${left===1?'':'s'}`}</button>`:''}`);
+      button('done',close);button('undo',showUndo);button('next',()=>(r.mode==='undo'?showUndo():open()));
+      refreshLauncher();
     }catch(e){notice(e.message,'error');}finally{busy=false;if(review)updateConfirm();}
   }
+  const undoSnapshot = (x,b) => ({version:1,id:`undo-${b.at}-${x.aid}`,albumId:'SpookyAlbum',name:x.name,counts:x.before,capturedAt:b.at});
   async function showUndo(){
-    const backup=await GM_getValue(BACKUP,null),mm=hubApi();
-    if(!backup || backup.version!==1 || !Array.isArray(backup.before) || !Array.isArray(backup.after) || backup.before.length!==198 || backup.after.length!==198 || !backup.before.every(validCount) || !backup.after.every(validCount))throw Error('No valid bridge import is available to undo.');
-    if(String(mm.Cloud?.user?.id||'local')!==backup.hubUser)throw Error('The undo backup belongs to another Hub sign-in.');
-    if(!ownAccounts(mm).some(a=>a.id===backup.aid))throw Error('The account from the last import is not present in this Hub.');
-    const snapshot={version:1,id:'undo-'+backup.at,albumId:'SpookyAlbum',name:backup.name,counts:backup.before,capturedAt:backup.at};
-    await showReview(snapshot,'undo',backup);
+    const b=await undoBatch(),mm=hubApi();
+    if(!b)throw Error('No bridge import is available to undo.');
+    if(String(mm.Cloud?.user?.id||'local')!==b.hubUser)throw Error('The undo backup belongs to another Hub sign-in.');
+    const items=b.items.filter(x=>ownAccounts(mm).some(a=>a.id===x.aid));
+    if(!items.length)throw Error('The accounts from the last import are not in this Hub.');
+    const asUndo=x=>({...x,hubUser:b.hubUser,at:b.at});
+    if(items.length===1)return showReview(undoSnapshot(items[0],b),'undo',asUndo(items[0]));
+    viewKind='undo';
+    const ready=x=>equal(Array.from(mm.S.st.counts[x.aid]||[]),x.after);
+    panel('Undo last bridge import',`<div class="help wide"><p>The last import changed ${items.length} accounts. Undo puts back the counts each one had before it, unless the account changed again since then.</p><div class="queue">${items.map(x=>{const ok=ready(x),n=x.after.filter((c,i)=>c!==x.before[i]).length;return `<div class="qrow small ${ok?'':'off'}"><div class="qava">${initial(mm.S.acct(x.aid)?.name||x.name)}</div><div class="qinfo"><strong>${esc(mm.S.acct(x.aid)?.name||x.name)}</strong><span class="muted">${ok?`${n} sticker count${n===1?'':'s'} go back`:'Changed after the import — undo is blocked so later edits are kept'}</span></div><div class="qacts"><button data-undo="${esc(x.aid)}" ${ok?'':'disabled'}>Review</button></div></div>`;}).join('')}</div><div id="message" class="notice"></div></div>`,`<button id="cancel">Close</button><span class="spacer"></span><button id="undo-all" class="primary" ${items.some(ready)?'':'disabled'}>Undo all available</button>`);
+    button('cancel',close);
+    q('.queue').addEventListener('click',e=>{const t=e.target.closest('[data-undo]');if(!t)return;const x=items.find(i=>i.aid===t.dataset.undo);showReview(undoSnapshot(x,b),'undo',asUndo(x)).catch(err=>notice(err.message,'error'));});
+    button('undo-all',async()=>{
+      if(busy)return;busy=true;q('#undo-all').disabled=true;
+      const lines=[];
+      try{
+        for(const x of items){
+          const name=mm.S.acct(x.aid)?.name||x.name;
+          try{hubApi();if(!ready(x))throw Error('changed after the import, kept as it is');applyToHub(mm,x.aid,x.before,x.after);await dropUndo(x.aid);lines.push({ok:true,text:`${name}: previous counts restored`});}
+          catch(err){lines.push({ok:false,text:`${name}: ${err.message}`});}
+        }
+      }finally{busy=false;}
+      panel('Undo finished',`<div class="help wide"><div class="queue">${lines.map(l=>`<div class="qrow small ${l.ok?'done':'fail'}"><div class="qava">${l.ok?'✓':'!'}</div><div class="qinfo"><strong>${esc(l.text)}</strong></div><div></div></div>`).join('')}</div></div>`,`<span class="spacer"></span><button id="done" class="primary">Done</button>`);
+      button('done',close);
+    });
+  }
+
+  /* ---------- the Hub's list of queued captures: match, check, apply them all at once ---------- */
+  async function showQueue(){
+    const mm=hubApi(),accounts=ownAccounts(mm),links=await GM_getValue(LINKS,{}),items=await albumQueue();
+    if(!items.length){qstate=null;return open();}
+    // keep choices made earlier in this list (e.g. after opening one capture and coming back)
+    const before=new Map((qstate?.rows||[]).map(r=>[r.id,r]));
+    qstate={hubUser:String(mm.Cloud?.user?.id||'local'),goldDouble:!!mm.S.st.settings.goldDouble,items,rows:items.map(s=>{const old=before.get(s.id);if(old)return old;const m=matchAccount(accounts,s.name,links);return {id:s.id,aid:m.id,include:!!m.id,photo:!!s.photo,confirmed:false};})};
+    viewKind='queue';review=null;
+    panel(`${items.length} album captures ready`,`<div class="help wide"><p>One capture per player from the official site. Check that each one points at the right Hub account, then apply them all at once — or open any one to review it set by set first.</p><div class="qtools"><button id="undo">Undo last bridge import</button><button id="clear" class="danger">Clear queue</button></div><div id="message" class="notice"></div><div class="queue" id="queue"></div><p class="muted">Applying saves every ticked account through the Hub's normal update. <b>Undo last bridge import</b> can put them all back afterwards.</p></div>`,`<span class="muted" id="commit-note"></span><span class="spacer"></span><button id="apply" class="primary">Apply</button>`);
+    renderQueue();
+    q('#queue').addEventListener('change',e=>{
+      const row=queueRow(e.target);if(!row)return;
+      if(e.target.matches('[data-inc]'))row.include=e.target.checked;
+      if(e.target.matches('[data-acct]')){row.aid=e.target.value;row.confirmed=false;if(row.aid)row.include=true;}
+      if(e.target.matches('[data-confirm]'))row.confirmed=e.target.checked;
+      if(e.target.matches('[data-photo]'))row.photo=e.target.checked;
+      try{renderQueue();}catch(err){notice(err.message,'error');}
+    });
+    q('#queue').addEventListener('click',e=>{
+      const t=e.target.closest('[data-review],[data-remove]');if(!t||busy)return;
+      const s=qstate.items.find(x=>x.id===t.closest('[data-q]').dataset.q);if(!s)return;
+      if(t.matches('[data-review]'))showReview(s).catch(err=>notice(err.message,'error'));
+      else queueDrop(s.id).then(()=>{refreshLauncher();return showQueue();}).catch(err=>notice(err.message,'error'));
+    });
+    let armed=false;
+    button('clear',async()=>{if(!armed){armed=true;q('#clear').textContent='Click again to remove all captures';return;}await GM_setValue(QUEUE,[]);qstate=null;refreshLauncher();await open();});
+    button('undo',showUndo);
+    button('apply',applyQueue);
+  }
+  const queueRow = el => {const id=el.closest('[data-q]')?.dataset.q;return qstate?.rows.find(r=>r.id===id);};
+  /** Everything the list shows and checks for each capture, against the Hub as it is right now. */
+  function queueViews(){
+    const mm=hubApi(),accounts=ownAccounts(mm),uses=new Map();
+    qstate.rows.forEach(r=>{if(r.include&&r.aid)uses.set(r.aid,(uses.get(r.aid)||0)+1);});
+    return qstate.items.map((s,k)=>{
+      const r=qstate.rows[k],a=accounts.find(x=>x.id===r.aid)||null,base=a?Array.from(mm.S.st.counts[a.id]||[]):null;
+      const sameName=!!a&&norm(a.name)===norm(s.name)&&accounts.filter(x=>norm(x.name)===norm(s.name)).length===1;
+      const problem=!a?'Choose the Hub account for this player.':uses.get(a.id)>1?'Two captures point at this account — pick a different one or untick one.':!base.every(validCount)||base.length!==198?'This Hub account has invalid counts. Fix those first.':!sameName&&!r.confirmed?`The account name differs from ${s.name}. Tick the box to confirm it's right.`:'';
+      return {s,r,a,base,sameName,problem,changes:base?s.counts.filter((n,i)=>n!==base[i]).length:null};
+    });
+  }
+  function renderQueue(){
+    const mm=hubApi(),accounts=ownAccounts(mm),views=queueViews();
+    q('#queue').innerHTML=views.map(({s,r,a,base,sameName,problem,changes})=>{
+      const now=stats(s.counts,qstate.goldDouble),was=base?stats(base,qstate.goldDouble):null,old=Date.now()-s.capturedAt>3600000;
+      return `<div class="qrow ${!r.include?'off':problem?'warn':''}" data-q="${esc(s.id)}">
+        <label class="qinc"><input type="checkbox" data-inc ${r.include?'checked':''} aria-label="Apply ${esc(s.name)}"></label>
+        <div class="qava">${s.photo?`<img src="${esc(s.photo)}" alt="">`:initial(s.name)}</div>
+        <div class="qinfo"><strong>${esc(s.name)}</strong><span class="muted">Captured ${esc(ago(s.capturedAt))}${old?' · consider a fresh capture':''}</span>
+          <div class="qnums"><span class="${was&&now.have>was.have?'up':''}">${was?`${was.have} → `:''}${now.have}/198 owned</span><span>${was?`${was.sets} → `:''}${now.sets}/22 sets</span><span>${now.duplicates} duplicates</span>${changes!=null?`<span>${changes} count${changes===1?'':'s'} changing</span>`:''}</div></div>
+        <div class="qacct"><select data-acct aria-label="Hub account for ${esc(s.name)}"><option value="">Choose a Hub account…</option>${accounts.map(x=>`<option value="${esc(x.id)}" ${x.id===r.aid?'selected':''}>${esc(x.name)}${x.device?' · '+esc(x.device):''}</option>`).join('')}</select>
+          ${a&&!sameName?`<label class="qcheck"><input type="checkbox" data-confirm ${r.confirmed?'checked':''}>This is ${esc(s.name)}'s account</label>`:''}
+          ${s.photo?`<label class="qcheck"><input type="checkbox" data-photo ${r.photo?'checked':''}>Use the profile picture &amp; frame</label>`:''}
+          ${r.include&&problem?`<span class="qwarn">${esc(problem)}</span>`:''}</div>
+        <div class="qacts"><button data-review>Review sets</button><button data-remove class="danger" aria-label="Remove ${esc(s.name)} from the queue">Remove</button></div>
+      </div>`;}).join('');
+    const picked=views.filter(v=>v.r.include),blocked=picked.filter(v=>v.problem);
+    q('#apply').disabled=busy||!picked.length||blocked.length>0;
+    q('#apply').textContent=`Apply ${picked.length} account${picked.length===1?'':'s'}`;
+    q('#commit-note').textContent=!picked.length?'Tick at least one capture.':blocked.length?`${blocked.length} need${blocked.length===1?'s':''} attention`:`${picked.reduce((n,v)=>n+(v.changes||0),0)} sticker counts across ${picked.length} account${picked.length===1?'':'s'}`;
+  }
+  async function applyQueue(){
+    if(busy||!qstate)return;
+    const picked=queueViews().filter(v=>v.r.include);
+    if(!picked.length||picked.some(v=>v.problem)){renderQueue();return;}
+    busy=true;q('#apply').disabled=true;
+    const lines=[];let saved=0,undoable=0;
+    try{
+      const mm=hubApi();
+      if(String(mm.Cloud?.user?.id||'local')!==qstate.hubUser)throw Error('Your Hub sign-in changed. Reopen Album Bridge.');
+      const live=new Set((await albumQueue()).map(s=>s.id));
+      if(picked.some(v=>!live.has(v.s.id)))throw Error('The queue changed in another tab. Reopen Album Bridge to see the newest captures.');
+      // one undo record for the whole batch, written before anything changes; trimmed afterwards to what really changed
+      const previousUndo=await GM_getValue(UNDO,null);
+      const plan=picked.map(v=>({v,before:v.base.slice(),after:v.s.counts.slice()}));
+      await saveUndo(qstate.hubUser,plan.filter(p=>!equal(p.before,p.after)).map(p=>({aid:p.v.a.id,name:p.v.a.name,before:p.before,after:p.after})));
+      const links=await GM_getValue(LINKS,{}),applied=[],cleared=[];
+      for(const p of plan){
+        const {s,a,r}=p.v;
+        try{
+          hubApi();
+          const n=applyToHub(mm,a.id,p.after,p.before);
+          let pic='';
+          if(r.photo&&s.photo){try{if(typeof mm.Bridge?.applyPhoto!=='function')throw Error('old Hub');mm.Bridge.applyPhoto(String(a.id),String(s.photo));pic=' · picture updated';}catch{pic=' · picture not updated';}}
+          links[norm(s.name)]=a.id;cleared.push(s.id);applied.push(p);saved++;
+          lines.push({ok:true,text:`${s.name} → ${a.name}: ${n} sticker count${n===1?'':'s'} updated${pic}`});
+        }catch(e){lines.push({ok:false,text:`${s.name} → ${a.name}: ${e.message}`});}
+      }
+      const real=applied.filter(p=>!equal(p.before,p.after));undoable=real.length;
+      if(real.length)await saveUndo(qstate.hubUser,real.map(p=>({aid:p.v.a.id,name:p.v.a.name,before:p.before,after:p.after})));
+      else if(previousUndo)await GM_setValue(UNDO,previousUndo);else await GM_deleteValue(UNDO);
+      await GM_setValue(LINKS,links);await queueDrop(cleared);
+    }catch(e){busy=false;notice(e.message,'error');renderQueue();return;}
+    busy=false;qstate=null;
+    const left=(await albumQueue()).length;
+    refreshLauncher();
+    panel(saved===picked.length?'Album updates saved':'Some updates need another look',`<div class="help wide"><div class="queue">${lines.map(l=>`<div class="qrow small ${l.ok?'done':'fail'}"><div class="qava">${l.ok?'✓':'!'}</div><div class="qinfo"><strong>${esc(l.text)}</strong></div><div></div></div>`).join('')}</div><p class="muted">Saved through the Hub’s normal update flow; cloud sync takes it from here. Captures that failed stay in the queue so you can try again.</p></div>`,`<button id="done">Done</button>${undoable?'<button id="undo">Review undo</button>':''}${left?`<span class="spacer"></span><button id="next" class="primary">Back to the queue (${left})</button>`:''}`);
+    button('done',close);button('undo',showUndo);button('next',open);
   }
   async function checkPending(auto=false){
     if(!isHub)return;
-    const pending=await GM_getValue(KEY,null);
+    const queued=await albumQueue(),sig=queued.map(s=>s.id).join(',');
     await refreshLauncher();
-    if(pending&&view&&review&&review.snapshot.id!==pending.id&&review.mode==='import')notice('A newer official capture arrived. Close and reopen Album Bridge to review it.');
-    if(auto&&pending&&!view&&lastAuto!==pending.id){try{hubApi();await open();}catch{}}
-    if(auto&&!pending)await offerExtras();
+    // the list is open and captures arrived (or left) from another tab: redraw it, keeping choices made so far
+    if(view&&viewKind==='queue'&&!busy&&qstate&&sig!==qstate.items.map(s=>s.id).join(',')){try{await showQueue();notice('The queue changed in another tab — the list now shows the newest captures.','good');}catch{}}
+    else if(view&&review&&review.mode==='import'){
+      if(!queued.some(s=>s.id===review.snapshot.id))notice(`A newer capture of ${review.snapshot.name} arrived. Go back to the list to review the newest one.`);
+      else if(queued.length>1&&!q('#back')){
+        // more players arrived while this one was open: offer the list without losing this review
+        const back=document.createElement('button');back.id='back';back.textContent='← All captures';back.onclick=()=>{showQueue().catch(e=>notice(e.message,'error'));};
+        q('.foot')?.prepend(back);
+        notice(`${queued.length-1} more capture${queued.length===2?'':'s'} arrived. Finish this one, or open all captures to apply them together.`,'good');
+      }
+    }
+    if(auto&&queued.length&&!view&&lastAuto!==sig){lastAuto=sig;try{hubApi();await open();}catch{lastAuto='';}}
+    if(auto&&!queued.length)await offerExtras();
   }
   hookWiki(); // before the calculator page loads, so its own cost requests can be seen
   function start(){
@@ -624,6 +806,12 @@
     }
     if(typeof GM_addValueChangeListener==='function'){
       GM_addValueChangeListener(KEY,()=>{checkPending(true).catch(()=>{});});
+      // only changes made in other tabs; this tab redraws its own changes itself
+      GM_addValueChangeListener(QUEUE,(name,oldValue,newValue,remote)=>{
+        if(!remote)return;
+        checkPending(true).catch(()=>{});
+        if(!isHub){refreshLauncher();if(view&&viewKind==='album')albumQueue().then(renderSourceQueue).catch(()=>{});}
+      });
       GM_addValueChangeListener(EXTRAS,()=>{checkPending(true).catch(()=>{});});
     }
     if(isHub){

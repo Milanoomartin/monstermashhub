@@ -40,3 +40,14 @@
   - sets your landmark levels and sends the costs to the Hub.
 
   The Hub review opens with the right account already selected. If the board can't be found, it explains why and offers Try again.
+
+## Album Bridge 1.3.0: capture queue
+- **Capture & add to queue** on the official album saves each player's capture and keeps it until the Hub applies it, across tabs and browser restarts (up to 24 players). Capturing the same player again replaces their older capture. The capture panel lists everything queued, with a Remove button per player, and the launcher shows "N queued".
+- **Hub list:** with several captures waiting, the Hub opens one list instead of a single review:
+  - each player matched to its account (by name, or the account you used for them last time), with owned / sets / duplicates before -> after and how many counts change,
+  - optional "use profile picture" per player,
+  - **Apply** updates every ticked account in one go, and **Review sets** opens the full set-by-set review for one player first,
+  - blocked until fixed: a player with no account, two captures pointing at the same account, or an account name that differs from the player's name (until you tick "This is ...'s account").
+- Captures that arrive while the Hub is open show up straight away, in the list or as an "All captures" button on an open review.
+- **Undo last bridge import** covers every account from the last apply. Restore them all at once, or one by one. An account changed again since the import is left alone.
+- A capture and undo saved by 1.2 move into the new queue automatically.
